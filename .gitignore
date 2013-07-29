@@ -1,0 +1,12 @@
+.htaccess
+._*
+.Apple*
+.DS_Store
+*.esproj
+*~
+*.geany
+*.sublime-project
+*.sublime-workspace
+install-log.txt
+manifest/*
+sql/*
