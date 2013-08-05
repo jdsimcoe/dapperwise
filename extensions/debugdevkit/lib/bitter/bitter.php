@@ -18,7 +18,7 @@
 /*----------------------------------------------------------------------------*/
 	
 	class Bitter {
-		static public function encode($subject) {
+		public function encode($subject) {
 			return str_replace(
 				array('&', '<', '>'),
 				array('&amp;', '&lt;', '&gt;'),
@@ -26,27 +26,27 @@
 			);
 		}
 		
-		static public function capture($expression, $flags = '') {
+		public function capture($expression, $flags = '') {
 			return new BitterMatch($expression, $flags, BitterMatch::CAPTURE);
 		}
 		
-		static public function start($expression, $flags = '') {
+		public function start($expression, $flags = '') {
 			return new BitterMatch($expression, $flags, BitterMatch::START);
 		}
 		
-		static public function stop($expression, $flags = '') {
+		public function stop($expression, $flags = '') {
 			return new BitterMatch($expression, $flags, BitterMatch::STOP);
 		}
 		
-		static public function id($name) {
+		public function id($name) {
 			return new BitterId($name);
 		}
 		
-		static public function tag($value) {
+		public function tag($value) {
 			return new BitterTag($value);
 		}
 		
-		static public function rule(BitterId $id) {
+		public function rule(BitterId $id) {
 			$values = func_get_args();
 			$rule = new BitterRule();
 			
@@ -141,14 +141,13 @@
 			// Sanitise newline formats:
 			$source = trim(preg_replace('/(\r\n|\r|\n)/i', "\n", $source));
 			
-			$this->cache_time = 0;
 			$this->cache_file = BITTER_CACHE_PATH . '/' . implode('-', array(
 				md5($this->language_name),
 				md5($this->format_name),
 				md5($source)
 			));
 			
-			if (is_readable($this->cache_file) and is_file($this->cache_file)) {
+			if (is_readable($this->cache_file)) {
 				$this->cache_time = (integer)filemtime($this->cache_file);
 				$this->refresh_time = max($this->language_time, $this->format_time);
 			}
@@ -353,12 +352,8 @@
 			$output = ''; $count = 0;
 			$this->disabled = array();
 			
-			while (strlen($context)) {
+			while ($count++ < 1000000 and strlen($context)) {
 				$rule = $this->getRule($context);
-				
-				if ($count++ > 1000000) {
-					throw new Exception('Processing failed, recursion limit reached.');
-				}
 				
 				if ($rule instanceof BitterRule) {
 					$state = $rule->getState($context);

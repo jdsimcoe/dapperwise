@@ -3,38 +3,32 @@
 	$about = array(
 		'name' => 'Русский',
 		'author' => array(
-			'name' => 'Александр Бирюков',
-			'email' => 'info@alexbirukov.ru',
-			'website' => 'http://alexbirukov.ru'
+			'name' => 'Igor Bogdanov',
+			'email' => 'i.bogdanov@ibcico.com',
+			'website' => false
 		),
-		'release-date' => '2012-06-05'
+		'release-date' => '2009-11-27'
 	);
-
-	/**
-	 * Debug Devkit
+	
+	
+	/*
+	 * EXTENSION: Debug Devkit
+	 * Localisation strings
 	 */
+
 	$dictionary = array(
+	
+		'Debug' => 
+		'Отладка',
 
 		'Params' => 
 		'Параметры',
 
-		'Result' => 
-		'Результат',
-
 		'XML' => 
 		'XML',
 
-
-		'Debug' => 
-		'Отладка',
-
-		'Failed to create cache folder. Please check "%s" is writable.' => 
-		'Ошибка создания каталога кэша. Проверьте "%s" на право записи.',
-
-		'Cache folder is not writable. Please check permissions on "%s".' => 
-		'Нет прав на запись в каталоге кэша. Пожалуйста проверьте права "%s".',
-
-		'Plain XML' => 
-		'Простой XML',
-
+		'Result' => 
+		'Результат'
+		
 	);
+	

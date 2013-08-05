@@ -27,7 +27,6 @@
 				'general'			=> Symphony::Profiler()->retrieveGroup('General'),
 				'data-sources'		=> Symphony::Profiler()->retrieveGroup('Datasource'),
 				'events'			=> Symphony::Profiler()->retrieveGroup('Event'),
-				'delegates'			=> Symphony::Profiler()->retrieveGroup('Delegate'),
 				'slow-queries'		=> array()
 			);
 
@@ -40,7 +39,7 @@
 			return parent::build();
 		}
 
-		protected function buildJump(XMLElement $wrapper) {
+		protected function buildJump($wrapper) {
 			$list = new XMLElement('ul');
 
 			if (is_array($this->_records['general']) && !empty($this->_records['general'])) {
@@ -64,14 +63,6 @@
 					__('Event Execution'),
 					'?profile=events' . $this->_query_string,
 					($this->_view == 'events')
-				));
-			}
-
-			if (is_array($this->_records['delegates']) && !empty($this->_records['delegates'])) {
-				$list->appendChild($this->buildJumpItem(
-					__('Delegate Execution'),
-					'?profile=delegates' . $this->_query_string,
-					($this->_view == 'delegates')
 				));
 			}
 
@@ -106,7 +97,7 @@
 			$wrapper->appendChild($list);
 		}
 
-		public function buildContent(XMLElement $wrapper) {
+		public function buildContent($wrapper) {
 			$this->addStylesheetToHead(URL . '/extensions/profiledevkit/assets/devkit.css', 'screen', 9126343);
 
 			$table = new XMLElement('table');
@@ -128,8 +119,8 @@
 					array(__('Total Time Spent on Queries'), $this->_dbstats['total-query-time']),
 					array(__('Time Triggering All Events'), $event_total),
 					array(__('Time Running All Data Sources'), $ds_total),
-					array(__('XML Generation'), $xml_generation[1]),
-					array(__('XSLT Transformation'), $xsl_transformation[1]),
+					array(__('XML Generation Function'), $xml_generation[1]),
+					array(__('XSLT Generation'), $xsl_transformation[1]),
 					array(__('Output Creation Time'), Symphony::Profiler()->retrieveTotalRunningTime()),
 					array(__('Total Memory Usage'), General::formatFilesize(Symphony::Profiler()->retrieveTotalMemoryUsage()), NULL, NULL, false),
 				);
@@ -145,9 +136,11 @@
 					$row->appendChild(new XMLElement('td', $data[1]));
 					$table->appendChild($row);
 				}
+
+
 			}
 
-			else if($this->_view == 'memory-usage'){
+			elseif($this->_view == 'memory-usage'){
 				$items = Symphony::Profiler()->retrieve();
 
 				$base = $items[0][5];
@@ -155,19 +148,9 @@
 				$last = 0;
 
 				foreach($items as $index => $item){
-					// Build row display name
-					if(in_array($item[3], array('Datasource','Event'))) {
-						$display_value = $item[3] . ': ' . $item[0];
-					}
-					else if($item[3] == 'Delegate') {
-						$display_value = str_replace('|', ': ', $item[0]);
-					}
-					else {
-						$display_value = $item[0];
-					}
 
 					$row = new XMLElement('tr');
-					$row->appendChild(new XMLElement('th', $display_value));
+					$row->appendChild(new XMLElement('th', ((in_array($item[3], array('Datasource','Event'))) ? $item[3] . ': ' : '') . $item[0]));
 					$row->appendChild(new XMLElement('td', General::formatFilesize(max(0, (($item[5]-$base) - $last)))));
 					$table->appendChild($row);
 
@@ -175,7 +158,8 @@
 				}
 			}
 
-			else if($this->_view == 'database-queries'){
+			elseif($this->_view == 'database-queries'){
+
 				$debug = Symphony::Database()->debug();
 
 				if(count($debug) > 0){
@@ -189,43 +173,7 @@
 						$i++;
 					}
 				}
-			}
 
-			else if ($this->_view == 'delegates') {
-				$delegates = array();
-				$debug = Symphony::Database()->debug();
-
-				// Build an array of delegate => extensions
-				foreach ($this->_records['delegates'] as $data) {
-					$parts = explode('|', $data[0]);
-					$data[0] = $parts[1];
-					$delegates[$parts[0]][] = $data;
-				}
-
-				foreach($delegates as $delegate => $extensions) {
-					$tt = $tq = 0;
-					$te = array();
-					$row = new XMLElement('tr');
-					$row->appendChild(new XMLElement('th', $delegate));
-					$table->appendChild($row);
-
-					foreach($extensions as $extension) {
-						$execution_time = number_format($extension[1], 4);
-						$extension_row = new XMLElement('tr');
-
-						// Poor man's grouping.
-						$extension_row->appendChild(new XMLElement('td', '&nbsp;'));
-						$extension_row->appendChild(new XMLElement('th', $extension[0]));
-						$extension_row->appendChild(new XMLElement('td', $execution_time . ' s from ' . $extension[4] . ' ' . ($extension[4] == 1 ? 'query' : 'queries')));
-
-						$table->appendChild($extension_row);
-						$tt += $execution_time;
-						$tq += (is_array($extension[4])) ? count($extension[4]) : $extension[4];
-						if(!in_array($extension[0], $te)) $te[] = $extension[0];
-					}
-
-					$row->appendChild(new XMLElement('td', number_format($tt, 4) . ' s from ' . count($te) . ' extensions and ' . $tq . ' ' . ($tq == 1 ? 'query' : 'queries')));
-				}
 			}
 
 			else if ($this->_records = $this->_records[$this->_view]) {

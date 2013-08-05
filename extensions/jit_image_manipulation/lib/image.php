@@ -1,7 +1,6 @@
 <?php
 
 	@ini_set('display_errors', 'off');
-	@ini_set("gd.jpeg_ignore_warning", 1);
 
 	define('DOCROOT', rtrim(realpath(dirname(__FILE__) . '/../../../'), '/'));
 	define('DOMAIN', rtrim(rtrim($_SERVER['HTTP_HOST'], '/') . str_replace('/extensions/jit_image_manipulation/lib', NULL, dirname($_SERVER['PHP_SELF'])), '/'));
@@ -11,8 +10,6 @@
 	require_once(CORE . '/class.errorhandler.php');
 	require_once(CORE . '/class.log.php');
 	require_once('class.image.php');
-	require_once(TOOLKIT . '/class.page.php');
-	require_once(CONFIG);
 
 	// Setup the environment
 	if(method_exists('DateTimeObj', 'setSettings')) {
@@ -47,61 +44,73 @@
 
 		if (is_array($recipes) && !empty($recipes)) {
 			foreach($recipes as $recipe) {
-				// Is the mode regex? If so, bail early and let not JIT process it.
-				if($recipe['mode'] === 'regex' && preg_match($recipe['url-parameter'], $string)) {
-					// change URL to a "normal" JIT URL
-					$string = preg_replace($recipe['url-parameter'], $recipe['jit-parameter'], $string);
-					$is_regex = true;
-					if (!empty($recipe['quality'])) {
-						$image_settings['quality'] = $recipe['quality'];
-					}
-					break 2;
-				}
-				// Nope, we're not regex, so make a regex and then check whether we this recipe matches
-				// the URL string. If not, continue to the next recipe.
-				else if(!preg_match('/^' . $recipe['url-parameter'] . '\//i', $string, $matches)) {
-					continue;
-				}
-
-				// If we're here, the recipe name matches, so we'll go on to fill out the params
-
-				// Is it an external image?
-				$param->external = (bool)$recipe['external'];
-
-				// Path to file
-				$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
-
-				// Set output quality
-				if (!empty($recipe['quality'])) {
-					$image_settings['quality'] = $recipe['quality'];
-				}
-
-				// Specific variables based off mode
-				// 0 is ignored (direct display)
-				// regex is already handled
 				switch ($recipe['mode']) {
-					// Resize
-					case '1':
-					// Resize to fit
-					case '4':
-						$param->mode = (int)$recipe['mode'];
-						$param->width = (int)$recipe['width'];
-						$param->height = (int)$recipe['height'];
+					case 'regex':
+						if(preg_match($recipe['url-parameter'], $string, $matches) == 1) {
+							// change URL to a "normal" JIT URL
+							$string = preg_replace($recipe['url-parameter'], $recipe['jit-parameter'], $string);
+							$is_regex = true;
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							break 2;
+						}
 						break;
-
-					// Resize and crop
+					case '0':
+						if (strpos($string, $recipe['url-parameter']) === 0) {
+							$param->external = (bool)$recipe['external'];
+							$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							return $param;
+						}
+						break;
+					case '1':
+						if (strpos($string, $recipe['url-parameter']) === 0) {
+							$param->mode = 1;
+							$param->width = $recipe['width'];
+							$param->height = $recipe['height'];
+							$param->external = (bool)$recipe['external'];
+							$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							return $param;
+						}
+						break;
 					case '2':
-					// Crop
+						if (strpos($string, $recipe['url-parameter']) === 0) {
+							$param->mode = 2;
+							$param->width = $recipe['width'];
+							$param->height = $recipe['height'];
+							$param->position = $recipe['position'];
+							$param->background = $recipe['background'];
+							$param->external = (bool)$recipe['external'];
+							$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							return $param;
+						}
+						break;
 					case '3':
-						$param->mode = (int)$recipe['mode'];
-						$param->width = (int)$recipe['width'];
-						$param->height = (int)$recipe['height'];
-						$param->position = (int)$recipe['position'];
-						$param->background = $recipe['background'];
+						if (strpos($string, $recipe['url-parameter']) === 0) {
+							$param->mode = 3;
+							$param->width = $recipe['width'];
+							$param->height = $recipe['height'];
+							$param->position = $recipe['position'];
+							$param->background = $recipe['background'];
+							$param->external = (bool)$recipe['external'];
+							$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							return $param;
+						}
+						break;
+					case '4':
+						if (strpos($string, $recipe['url-parameter']) === 0) {
+							$param->mode = 4;
+							$param->width = $recipe['width'];
+							$param->height = $recipe['height'];
+							$param->external = (bool)$recipe['external'];
+							$param->file = substr($string, strlen($recipe['url-parameter']) + 1);
+							if (!empty($recipe['quality'])) $image_settings['quality'] = $recipe['quality'];
+							return $param;
+						}
 						break;
 				}
-
-				return $param;
 			}
 		}
 
@@ -109,35 +118,53 @@
 		// We only have to check if we are using a `regex` recipe
 		// because the other recipes already return `$param`.
 		if($image_settings['disable_regular_rules'] == 'yes' && $is_regex != true){
-			Page::renderStatusCode(Page::HTTP_STATUS_NOT_FOUND);
+			header('HTTP/1.0 404 Not Found');
 			trigger_error('Error generating image', E_USER_ERROR);
 			echo 'Regular JIT rules are disabled and no matching recipe was found.';
 			exit;
 		}
 
-		// Mode 2: Resize and crop
-		// Mode 3: Crop
-		if(preg_match_all('/^(2|3)\/([0-9]+)\/([0-9]+)\/([1-9])\/([a-fA-F0-9]{3,6}\/)?(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
-			$param->mode = (int)$matches[0][1];
-			$param->width = (int)$matches[0][2];
-			$param->height = (int)$matches[0][3];
-			$param->position = (int)$matches[0][4];
-			$param->background = trim($matches[0][5],'/');
-			$param->external = (bool)$matches[0][6];
-			$param->file = $matches[0][7];
+		// Mode 3: Resize Canvas
+		if(preg_match_all('/^3\/([0-9]+)\/([0-9]+)\/([1-9])\/([a-fA-F0-9]{3,6}\/)?(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
+			$param->mode = 3;
+			$param->width = $matches[0][1];
+			$param->height = $matches[0][2];
+			$param->position = $matches[0][3];
+			$param->background = trim($matches[0][4],'/');
+			$param->external = (bool)$matches[0][5];
+			$param->file = $matches[0][6];
 		}
 
-		// Mode 1: Resize
-		// Mode 4: Resize to fit
-		else if(preg_match_all('/^(1|4)\/([0-9]+)\/([0-9]+)\/(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
-			$param->mode = (int)$matches[0][1];
-			$param->width = (int)$matches[0][2];
-			$param->height = (int)$matches[0][3];
-			$param->external = (bool)$matches[0][4];
-			$param->file = $matches[0][5];
+		// Mode 2: Crop to fill
+		else if(preg_match_all('/^2\/([0-9]+)\/([0-9]+)\/([1-9])\/([a-fA-F0-9]{3,6}\/)?(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
+			$param->mode = 2;
+			$param->width = $matches[0][1];
+			$param->height = $matches[0][2];
+			$param->position = $matches[0][3];
+			$param->background = trim($matches[0][4],'/');
+			$param->external = (bool)$matches[0][5];
+			$param->file = $matches[0][6];
 		}
 
-		// Mode 0: Direct display of image
+		// Mode 1: Image resize
+		else if(preg_match_all('/^1\/([0-9]+)\/([0-9]+)\/(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
+			$param->mode = 1;
+			$param->width = $matches[0][1];
+			$param->height = $matches[0][2];
+			$param->external = (bool)$matches[0][3];
+			$param->file = $matches[0][4];
+		}
+
+		// Mode 4: Image fit resize
+		elseif(preg_match_all('/^4\/([0-9]+)\/([0-9]+)\/(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
+			$param->mode = 4;
+			$param->width = $matches[0][1];
+			$param->height = $matches[0][2];
+			$param->external = (bool)$matches[0][3];
+			$param->file = $matches[0][4];
+		}
+
+		// Mode 0: Direct displaying of image
 		elseif(preg_match_all('/^(?:(0|1)\/)?(.+)$/i', $string, $matches, PREG_SET_ORDER)){
 			$param->external = (bool)$matches[0][1];
 			$param->file = $matches[0][2];
@@ -207,33 +234,24 @@
 		if(count($rules) > 0) foreach($rules as $rule) {
 			$rule = str_replace(array('http://', 'https://'), NULL, $rule);
 
-			// Wildcard
 			if($rule == '*'){
 				$allowed = true;
 				break;
 			}
 
-			// Wildcard after domain
 			else if(substr($rule, -1) == '*' && strncasecmp($param->file, $rule, strlen($rule) - 1) == 0){
 				$allowed = true;
 				break;
 			}
 
-			// Match the start of the rule with file path
-			else if(strncasecmp($rule, $param->file, strlen($rule)) == 0){
-				$allowed = true;
-				break;
-			}
-
-			// Match subdomain wildcards
-			else if(substr($rule, 0, 1) == '*' && preg_match("/(".substr((substr($rule, -1) == '*' ? rtrim($rule, "/*") : $rule), 2).")/", $param->file)){
+			else if(strcasecmp($rule, $param->file) == 0){
 				$allowed = true;
 				break;
 			}
 		}
 
 		if($allowed == false){
-			Page::renderStatusCode(Page::HTTP_STATUS_FORBIDDEN);
+			header('Status: 403 Forbidden', true, 403);
 			exit(sprintf('Error: Connecting to %s is not permitted.', $param->file));
 		}
 
@@ -258,7 +276,7 @@
 	// can just be returned to the browser to use it's cached version.
 	if(CACHING === true && (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH']))){
 		if($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $last_modified_gmt || str_replace('"', NULL, stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == $etag){
-			Page::renderStatusCode(Page::HTTP_NOT_MODIFIED);
+			header('Status: 304 Not Modified', true, 304);
 			exit;
 		}
 	}
@@ -292,7 +310,7 @@
 			|| ($param->external === FALSE && (!file_exists($original_file) || !is_readable($original_file)))
 		) {
 			// Guess not, return 404.
-			Page::renderStatusCode(Page::HTTP_STATUS_NOT_FOUND);
+			header('Status: 404 Not Found', true, 404);
 			trigger_error(sprintf('Image <code>%s</code> could not be found.', str_replace(DOCROOT, '', $original_file)), E_USER_ERROR);
 			echo sprintf('Image <code>%s</code> could not be found.', str_replace(DOCROOT, '', $original_file));
 			exit;
@@ -314,37 +332,34 @@
 		}
 	}
 	catch(Exception $e){
-		Page::renderStatusCode(Page::HTTP_STATUS_BAD_REQUEST);
+		header('Status: 400 Bad Request', true, 400);
 		trigger_error($e->getMessage(), E_USER_ERROR);
 		echo $e->getMessage();
 		exit;
 	}
 
-	// Calculate the correct dimensions. If necessary, avoid upscaling the image.
-	$src_w = $image->Meta()->width;
-	$src_h = $image->Meta()->height;
-	if ($settings['image']['disable_upscaling'] == 'yes') {
-		$dst_w = min($param->width, $src_w);
-		$dst_h = min($param->height, $src_h);
-	} else {
-		$dst_w = $param->width;
-		$dst_h = $param->height;
-	}
-
 	// Apply the filter to the Image class (`$image`)
 	switch($param->mode) {
 		case MODE_RESIZE:
-			$image->applyFilter('resize', array($dst_w, $dst_h));
+			$image->applyFilter('resize', array($param->width, $param->height));
 			break;
 
 		case MODE_FIT:
+			$src_w = $image->Meta()->width;
+			$src_h = $image->Meta()->height;
+
+			$dst_w = $param->width;
+			$dst_h = $param->height;
+
 			if($param->height == 0) {
 				$ratio = ($src_h / $src_w);
+				$dst_w = $param->width;
 				$dst_h = round($dst_w * $ratio);
 			}
 
 			else if($param->width == 0) {
 				$ratio = ($src_w / $src_h);
+				$dst_h = $param->height;
 				$dst_w = round($dst_h * $ratio);
 			}
 
@@ -367,13 +382,21 @@
 			break;
 
 		case MODE_RESIZE_CROP:
+			$src_w = $image->Meta()->width;
+			$src_h = $image->Meta()->height;
+
+			$dst_w = $param->width;
+			$dst_h = $param->height;
+
 			if($param->height == 0) {
 				$ratio = ($src_h / $src_w);
+				$dst_w = $param->width;
 				$dst_h = round($dst_w * $ratio);
 			}
 
 			else if($param->width == 0) {
 				$ratio = ($src_w / $src_h);
+				$dst_h = $param->height;
 				$dst_w = round($dst_h * $ratio);
 			}
 
@@ -388,7 +411,7 @@
 			}
 
 		case MODE_CROP:
-			$image->applyFilter('crop', array($dst_w, $dst_h, $param->position, $param->background));
+			$image->applyFilter('crop', array($param->width, $param->height, $param->position, $param->background));
 			break;
 	}
 
@@ -397,7 +420,7 @@
 	// Configuration.
 	if(CACHING && !is_file($cache_file)){
 		if(!$image->save($cache_file, intval($settings['image']['quality']))) {
-			Page::renderStatusCode(Page::HTTP_STATUS_NOT_FOUND);
+			header('Status: 404 Not Found', true, 404);
 			trigger_error('Error generating image', E_USER_ERROR);
 			echo 'Error generating image, failed to create cache file.';
 			exit;
@@ -407,7 +430,7 @@
 	// Display the image in the browser using the Quality setting from Symphony's
 	// Configuration. If this fails, trigger an error.
 	if(!$image->display(intval($settings['image']['quality']))) {
-		Page::renderStatusCode(Page::HTTP_STATUS_NOT_FOUND);
+		header('Status: 404 Not Found', true, 404);
 		trigger_error('Error generating image', E_USER_ERROR);
 		echo 'Error generating image';
 		exit;

@@ -2,9 +2,9 @@
 
 A simple way to manipulate images "just in time" via the URL. Supports caching, image quality settings and loading of offsite images.
 
-- Version: 1.18
-- Date: 24th March 2013
-- Requirements: Symphony 2.3.2 or later
+- Version: 1.15
+- Date: 21st May 2012
+- Requirements: Symphony 2.3 or later
 - Author: Alistair Kearney, alistair@symphony-cms.com
 - GitHub Repository: <http://github.com/symphonycms/jit_image_manipulation>
 
@@ -14,12 +14,6 @@ A simple way to manipulate images "just in time" via the URL. Supports caching, 
 Information about [installing and updating extensions](http://symphony-cms.com/learn/tasks/view/install-an-extension/) can be found in the [Symphony documentation](http://symphony-cms.com/learn/).
 
 ## Updating
-
-### 1.17
-
-This release raises the minimum requirement to Apache 2.2+.
-
-### 1.15
 
 Since version `1.15`, JIT configuration has moved from `/manifest/` to the `/workspace/` folder. This change will automatically happen when you update the extension from the "System > Extensions" page.
 
@@ -36,9 +30,9 @@ It is not absolutely necessary to do this, but may prevent problems with future 
 
 The image manipulation is controlled via the URL, eg.:
 
-	<img src="{$root}/image/2/80/80/5/fff/{image/@path}/{image/filename}" />
+	<img src="{$root}/image/2/80/80/5{image/@path}/{image/filename}" />
 
-The extension accepts four numeric settings and one text setting for the manipulation.
+The extension accepts four numeric settings for the manipulation:
 
 1. mode
 2. width
@@ -64,25 +58,20 @@ If you're using mode `2` or `3` for image cropping you need to specify the refer
 	| 7 | 8 | 9 |
 	+---+---+---+
 
-If you're using mode `2` or `3` for image cropping, there is an optional fifth parameter for background color. This can accept shorthand or full hex colors.
+If you're using mode `2` or `3` for image cropping, there is an optional fifth background color setting. This can accept shorthand or full hex colors.
 
 - *For `.jpg` images, it is advised to use this if the crop size is larger than the original, otherwise the extra canvas will be black.*
 - *For transparent `.png` or `.gif` images, supplying the background color will fill the image. This is why the setting is optional*
 
-The extra fifth parameter makes the URL look like this:
+The extra fifth setting makes the URL look like this:
 
 	<img src="{$root}/image/2/80/80/5/fff/{image/@path}/{image/filename}" />
 
 - *If you wish to crop and maintain the aspect ratio of an image but only have one fixed dimension (that is, width or height), simply set the other dimension to 0*
 
-### External sources & Trusted Sites
+### Trusted Sites
 
 In order pull images from external sources, you must set up a white-list of trusted sites. To do this, go to "System > Preferences" and add rules to the "JIT Image Manipulation" rules textarea. To match anything use a single asterisk (`*`).
-
-The URL then requires a sixth parameter, external, (where the fourth and fifth parameter may be optional), which is simply `1` or `0`. By default, this parameter is `0`, which means the image is located on the same domain as JIT. Setting it to `1` will allow JIT to process external images provided they are on the Trusted Sites list.
-
-	<img src="{$root}/image/1/80/80/1/{full/path/to/image}" />
-	                                ^ External parameter
 
 ### Recipes
 

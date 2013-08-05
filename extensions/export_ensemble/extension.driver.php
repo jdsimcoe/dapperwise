@@ -22,10 +22,6 @@
 		}
 
 		public function appendPreferences($context){
-			$no_zip_warning = null;
-			$no_install_dir_message = null;
-			$no_install_dir_warning = null;
-
 			// Test whether the install directory exists
 			if(!is_dir(DOCROOT . '/install/')){
 				$no_install_dir_message = 'Export Ensemble is not able to create ensembles without a complete <code>install</code> directory. Please refer to the <code>README</code> file for usage instructions.';
@@ -241,7 +237,7 @@
 
 			// Replace the current prefix with the default Symphony prefix
 			$sql_data = preg_replace(
-				'/(DROP TABLE IF EXISTS|CREATE TABLE|INSERT INTO|STRUCTURE:|DATA:) `' . $tbl_prefix . '/i',
+				'/(DROP TABLE IF EXISTS|CREATE TABLE|INSERT INTO) `' . $tbl_prefix . '/i',
 				'$1`tbl_', $sql_data
 			);
 

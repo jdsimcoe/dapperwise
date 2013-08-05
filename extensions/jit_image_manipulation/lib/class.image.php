@@ -1,16 +1,12 @@
 <?php
 
-	require_once(TOOLKIT . '/class.gateway.php');
-
 	Class Image {
 		private $_resource;
 		private $_meta;
 		private $_image;
-		static $_result;
 
 		const DEFAULT_QUALITY = 80;
 		const DEFAULT_INTERLACE = true;
-		const CURL_MAXREDIRS = 6;
 
 		private function __construct($resource, stdClass $meta){
 			$this->_resource = $resource;
@@ -45,24 +41,21 @@
 		 * @return Image
 		 */
 		public static function loadExternal($uri){
-			// create the Gateway object
-			$gateway = new Gateway();
-			// set our url
-			$gateway->init($uri);
-			// set some options
-			$gateway->setopt(CURLOPT_HEADER, false);
-			$gateway->setopt(CURLOPT_RETURNTRANSFER, true);
-			$gateway->setopt(CURLOPT_FOLLOWLOCATION, true);
-			$gateway->setopt(CURLOPT_MAXREDIRS, Image::CURL_MAXREDIRS);
-			// get the raw body response, ignore errors
-			$response = @$gateway->exec();
+			if(function_exists('curl_init')){
+				$ch = curl_init();
 
-			if($response === false){
-				throw new Exception(sprintf('Error reading external image <code>%s</code>. Please check the URI.', $uri));
+				curl_setopt($ch, CURLOPT_URL, $uri);
+				curl_setopt($ch, CURLOPT_HEADER, 0);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+				$tmp = curl_exec($ch);
+				curl_close($ch);
 			}
+			else $tmp = @file_get_contents($uri);
 
-			// clean up
-			$gateway->flush();
+			if($tmp === false){
+				new Exception(sprintf('Error reading external image <code>%s</code>. Please check the URI.', $uri));
+			}
 
 			// The `sys_get_temp_dir` is our preference, but on some shared hosting
 			// this is unavailable. If this fails, we'll attempt the `upload_tmp_dir`
@@ -74,8 +67,8 @@
 
 			$dest = tempnam($dir, 'IMAGE');
 
-			if(!file_put_contents($dest, $response)) {
-				throw new Exception(sprintf('Error writing to temporary file <code>%s</code>.', $dest));
+			if(!file_put_contents($dest, $tmp)) {
+				new Exception(sprintf('Error writing to temporary file <code>%s</code>.', $dest));
 			}
 
 			return self::load($dest);
@@ -171,7 +164,6 @@
 		 *  than display it inline
 		 */
 		public static function renderOutputHeaders($type, $destination=NULL){
-			ob_clean();
 			header('Content-Type: ' . image_type_to_mime_type($type));
 
 			if(is_null($destination)) return;
@@ -194,8 +186,20 @@
 		 * @return integer - HTTP response code
 		 */
 		public static function getHttpResponseCode($url){
-			$head = self:: getHttpHead($url);
-			return $head['info']['http_code'];
+			$ch = curl_init();
+			$options = array(
+				CURLOPT_URL => $url,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_HEADER => true,
+				CURLOPT_NOBODY => true,
+			);
+			curl_setopt_array($ch, $options);
+			curl_exec($ch);
+		    $info = curl_getinfo($ch);
+			curl_close($ch);
+
+			$status = $info['http_code'];
+			return $status;
 		}
 
 		/**
@@ -207,7 +211,8 @@
 		 */
 		public static function getHttpHeaderFieldValue($url, $field){
 			$headers = self::getHttpHeaders($url);
-			return $headers[$field];
+			$value = $headers[$field];
+			return $value;
 		}
 
 		/**
@@ -217,54 +222,18 @@
 		 * @return array - response headers
 		 */
 		public static function getHttpHeaders($url){
-			$head = self:: getHttpHead($url);
-			return $head['headers'];
-		}
-
-		/**
-		 * Get all HTTP response headers and info as an array of arrays.
-		 *
-		 * @since 1.17
-		 *
-		 * @param string $url
-		 * @return array
-		 *  Contains the headers and the infos
-		 */
-		public static function getHttpHead($url){
-			// Check if we have a cached result
-			if(isset(self::$_result[$url])) {
-				return self::$_result[$url];
-			}
-
-			// create the Gateway object
-			$gateway = new Gateway();
-			// set our url
-			$gateway->init($url);
-			// set some options
-			$gateway->setopt(CURLOPT_URL, $url);
-			$gateway->setopt(CURLOPT_RETURNTRANSFER, true);
-			$gateway->setopt(CURLOPT_HEADER, true);
-			$gateway->setopt(CURLOPT_NOBODY, true);
-			$gateway->setopt(CURLOPT_FOLLOWLOCATION, true);
-			$gateway->setopt(CURLOPT_MAXREDIRS, Image::CURL_MAXREDIRS);
-			// get the raw head response, ignore errors
-			$head = @$gateway->exec();
-			// Get all info
-			$result = array(
-				'headers' => array(),
-				'info' => $gateway->getInfoLast()
+			$ch = curl_init();
+			$options = array(
+				CURLOPT_URL => $url,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_HEADER => true,
+				CURLOPT_NOBODY => true,
 			);
-			// Clean up
-			$gateway->flush();
-
-			if ($head !== false) {
-				$result['headers'] = self::parseHttpHeaderFields($head);
-			}
-
-			// Save for subsequent requests
-			self::$_result[$url] = $result;
-
-			return $result;
+			curl_setopt_array($ch, $options);
+			$head = curl_exec($ch);
+			curl_close($ch);
+			$headers = self::parseHttpHeaderFields($head);
+			return $headers;
 		}
 
 		/**

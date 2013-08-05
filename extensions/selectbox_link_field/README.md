@@ -1,19 +1,22 @@
 # Select Box Link Field
 
-- Version: 1.26
+- Version: 1.23
 - Author: Symphony Team
-- Release Date: 22nd February 2012
-- Requirements: Symphony 2.3.2 or greater
+- Release Date: 22nd May 2012
+- Requirements: Symphony 2.3 or greater
 
 ## Installation
 
 1. Upload the `selectbox_link_field` folder in this archive to your Symphony 'extensions' folder.
+
 2. Enable it by selecting the "Field: Select Box Link", choose Enable from the with-selected menu, then click Apply.
+
 3. You can now add the "Select Box Link" field to your sections.
 
 ## Updating
 
-1. Be sure to visit the Extension page in the Symphony admin and enable "Select Box Link Field" so the database is updated accordingly.
+1. Be sure to visit the Extension page in the Symphony admin and
+   enable "Select Box Link Field" so the database is updated accordingly.
 
 ## Usage
 

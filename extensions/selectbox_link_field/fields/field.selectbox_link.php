@@ -2,10 +2,8 @@
 
 	if(!defined('__IN_SYMPHONY__')) die('<h2>Symphony Error</h2><p>You cannot directly access this file</p>');
 
-	require_once FACE . '/interface.exportablefield.php';
-	require_once FACE . '/interface.importablefield.php';
+	Class fieldSelectBox_Link extends Field {
 
-	class FieldSelectBox_Link extends Field implements ExportableField, ImportableField {
 		private static $cache = array();
 
 	/*-------------------------------------------------------------------------
@@ -82,7 +80,7 @@
 
 			// find the sections of the related fields
 			$sections = Symphony::Database()->fetch("
-				SELECT DISTINCT (s.id), f.id as `field_id`
+				SELECT DISTINCT (s.id), s.name, f.id as `field_id`
 				FROM `tbl_sections` AS `s`
 				LEFT JOIN `tbl_fields` AS `f` ON `s`.id = `f`.parent_section
 				WHERE `f`.id IN ('" . implode("','", $this->get('related_field_id')) . "')
@@ -90,16 +88,16 @@
 			");
 
 			if(is_array($sections) && !empty($sections)){
-				foreach($sections as $_section) {
-					$section = SectionManager::fetch($_section['id']);
+				foreach($sections as $section) {
 					$group = array(
-						'name' => $section->get('name'),
-						'section' => $section->get('id'),
+						'name' => $section['name'],
+						'section' => $section['id'],
 						'values' => array()
 					);
 
-					EntryManager::setFetchSorting($section->getSortingField(), $section->getSortingOrder());
-					$entries = EntryManager::fetch(NULL, $section->get('id'), $limit, 0, null, null, false, false);
+					// build a list of entry IDs with the correct sort order
+					EntryManager::setFetchSorting('date', 'DESC');
+					$entries = EntryManager::fetch(NULL, $section['id'], $limit, 0, null, null, false, false);
 
 					$results = array();
 					foreach($entries as $entry) {
@@ -108,7 +106,7 @@
 
 					// if a value is already selected, ensure it is added to the list (if it isn't in the available options)
 					if(!is_null($existing_selection) && !empty($existing_selection)){
-						$entries_for_field = $this->findEntriesForField($existing_selection, $_section['field_id']);
+						$entries_for_field = $this->findEntriesForField($existing_selection, $section['field_id']);
 						$results = array_merge($results, $entries_for_field);
 					}
 
@@ -129,11 +127,7 @@
 		public function getToggleStates(){
 			$options = $this->findOptions();
 			$output = $options[0]['values'];
-
-			if($this->get('required') !== 'yes') {
-				$output[""] = __('None');
-			}
-
+			$output[""] = __('None');
 			return $output;
 		}
 
@@ -229,7 +223,7 @@
 			$relation_id = array_filter($relation_id);
 			if(empty($relation_id)) return array();
 
-			$hash = md5(serialize($relation_id).$this->get('element_name'));
+			$hash = md5(serialize($relation_id));
 
 			if(!isset(self::$cache[$hash]['relation_data'])) {
 				$relation_ids = Symphony::Database()->fetch(sprintf("
@@ -237,6 +231,7 @@
 					FROM `tbl_entries` AS `e`
 					LEFT JOIN `tbl_sections` AS `s` ON (s.id = e.section_id)
 					WHERE e.id IN (%s)
+					ORDER BY `e`.creation_date DESC
 					",
 					implode(',', $relation_id)
 				));
@@ -268,39 +263,16 @@
 						}
 					}
 
-					$section = SectionManager::fetch($section_id);
-					if(($section instanceof Section) === false) continue;
-
-					EntryManager::setFetchSorting($section->getSortingField(), $section->getSortingOrder());
+					EntryManager::setFetchSorting('date', 'DESC');
 					$entries = EntryManager::fetch(array_values($entry_data), $section_id, null, null, null, null, false, true, $schema);
 
-					foreach ($entries as $entry) {
-						$field_data = $entry->getData($field->get('id'));
-
-						if (is_array($field_data) === false || empty($field_data)) continue;
-
-						// The field is exportable:
-						if (
-							$field instanceof ExportableField
-							&& in_array(ExportableField::UNFORMATTED, $field->getExportModes())
-						) {
-							$value = $field->prepareExportValue(
-								$field_data, ExportableField::UNFORMATTED, $entry->get('id')
-							);
-						}
-
-						// Nasty hack:
-						else {
-							$value = $field->getParameterPoolValue(
-								$field_data, $entry->get('id')
-							);
-						}
-
+					// 5. Loop over the Entries, passing the data to Field->prepareTableValue
+					foreach($entries as $entry) {
 						$relation_data[] = array(
-							'id' =>				$entry->get('id'),
-							'section_handle' =>	$section_info[$section_id]['handle'],
-							'section_name' =>	$section_info[$section_id]['name'],
-							'value' =>			$value
+							'id' => $entry->get('id'),
+							'section_handle' => $section_info[$section_id]['handle'],
+							'section_name' => $section_info[$section_id]['name'],
+							'value' => $field->getParameterPoolValue($entry->getData($field->get('id')), $entry->get('id'))
 						);
 					}
 				}
@@ -371,7 +343,7 @@
 			$label->setAttribute('class', 'column');
 			$input = Widget::Input('fields['.$this->get('sortorder').'][limit]', (string)$this->get('limit'));
 			$input->setAttribute('size', '3');
-			$label->setValue(__('Limit to %s entries', array($input->generate())));
+			$label->setValue(__('Limit to the %s most recent entries', array($input->generate())));
 			$wrapper->appendChild($label);
 
 			// Allow selection of multiple items
@@ -415,7 +387,9 @@
 			$fields['limit'] = max(1, (int)$this->get('limit'));
 			$fields['related_field_id'] = implode(',', $this->get('related_field_id'));
 
-			if(!FieldManager::saveSettings($id, $fields)) return false;
+			Symphony::Database()->delete("tbl_fields_" . $this->handle(), "`field_id` = '$id'");
+
+			if(!Symphony::Database()->insert($fields, 'tbl_fields_' . $this->handle())) return false;
 
 			$this->removeSectionAssociation($id);
 			foreach($this->get('related_field_id') as $field_id){
@@ -474,15 +448,11 @@
 
 		public function processRawFieldData($data, &$status, &$message=null, $simulate=false, $entry_id=null) {
 			$status = self::__OK__;
+
+			if(!is_array($data)) return array('relation_id' => $data);
+			if(empty($data)) return null;
+
 			$result = array();
-
-			if(!is_array($data)) {
-				return array('relation_id' => (int)$data);
-			}
-
-			if(empty($data)) {
-				return null;
-			}
 
 			foreach($data as $a => $value) {
 				$result['relation_id'][] = (int)$data[$a];
@@ -526,7 +496,7 @@
 		}
 
 		public function getParameterPoolValue(array $data, $entry_id=NULL){
-			return $this->prepareExportValue($data, ExportableField::LIST_OF + ExportableField::ENTRY, $entry_id);
+			return $data['relation_id'];
 		}
 
 		public function prepareTableValue($data, XMLElement $link = null, $entry_id = null) {
@@ -545,141 +515,20 @@
 			if(!is_null($link)){
 				$label = '';
 				foreach($result as $item){
-					$label .= $item['value'] . ', ';
+					$label .= ' ' . $item['value'];
 				}
-				$link->setValue(General::sanitize(trim($label, ', ')));
+				$link->setValue(General::sanitize(trim($label)));
 				return $link->generate();
 			}
 
 			$output = '';
 
 			foreach($result as $item){
-				$link = Widget::Anchor(is_null($item['value']) ? '' : $item['value'], sprintf('%s/publish/%s/edit/%d/', SYMPHONY_URL, $item['section_handle'], $item['id']));
-				$output .= $link->generate() . ', ';
+				$link = Widget::Anchor($item['value'], sprintf('%s/publish/%s/edit/%d/', SYMPHONY_URL, $item['section_handle'], $item['id']));
+				$output .= $link->generate() . ' ';
 			}
 
-			return trim($output, ', ');
-		}
-
-	/*-------------------------------------------------------------------------
-		Import:
-	-------------------------------------------------------------------------*/
-
-		public function getImportModes() {
-			return array(
-				'getValue' =>		ImportableField::STRING_VALUE,
-				'getPostdata' =>	ImportableField::ARRAY_VALUE
-			);
-		}
-
-		public function prepareImportValue($data, $mode, $entry_id = null) {
-			$message = $status = null;
-			$modes = (object)$this->getImportModes();
-
-			if(!is_array($data)) {
-				$data = array($data);
-			}
-
-			if($mode === $modes->getValue) {
-				if ($this->get('allow_multiple_selection') === 'no') {
-					$data = array(implode('', $data));
-				}
-
-				return implode($data);
-			}
-			else if($mode === $modes->getPostdata) {
-				return $this->processRawFieldData($data, $status, $message, true, $entry_id);
-			}
-
-			return null;
-		}
-
-	/*-------------------------------------------------------------------------
-		Export:
-	-------------------------------------------------------------------------*/
-
-		/**
-		 * Return a list of supported export modes for use with `prepareExportValue`.
-		 *
-		 * @return array
-		 */
-		public function getExportModes() {
-			return array(
-				'getPostdata' =>		ExportableField::POSTDATA,
-				'listEntry' =>			ExportableField::LIST_OF
-										+ ExportableField::ENTRY,
-				'listEntryObject' =>	ExportableField::LIST_OF
-										+ ExportableField::ENTRY
-										+ ExportableField::OBJECT,
-				'listEntryToValue' =>	ExportableField::LIST_OF
-										+ ExportableField::ENTRY
-										+ ExportableField::VALUE,
-				'listValue' =>			ExportableField::LIST_OF
-										+ ExportableField::VALUE
-			);
-		}
-
-		/**
-		 * Give the field some data and ask it to return a value using one of many
-		 * possible modes.
-		 *
-		 * @param mixed $data
-		 * @param integer $mode
-		 * @param integer $entry_id
-		 * @return array|null
-		 */
-		public function prepareExportValue($data, $mode, $entry_id = null) {
-			$modes = (object)$this->getExportModes();
-
-			if (isset($data['relation_id']) === false) return null;
-
-			if (is_array($data['relation_id']) === false) {
-				$data['relation_id'] = array(
-					$data['relation_id']
-				);
-			}
-
-			// Return postdata:
-			if ($mode === $modes->getPostdata) {
-				return $data;
-			}
-
-			// Return the entry IDs:
-			else if ($mode === $modes->listEntry) {
-				return $data['relation_id'];
-			}
-
-			// Return entry objects:
-			else if ($mode === $modes->listEntryObject) {
-				$items = array();
-
-				$entries = EntryManager::fetch($data['relation_id']);
-				foreach ($entries as $entry) {
-					if (is_array($entry) === false || empty($entry)) continue;
-
-					$items[] = current($entry);
-				}
-
-				return $items;
-			}
-
-			// All other modes require full data:
-			$data = $this->findRelatedValues($data['relation_id']);
-			$items = array();
-
-			foreach ($data as $item) {
-				$item = (object)$item;
-
-				if ($mode === $modes->listValue) {
-					$items[] = $item->value;
-				}
-
-				else if ($mode === $modes->listEntryToValue) {
-					$items[$item->id] = $item->value;
-				}
-			}
-
-			return $items;
+			return trim($output);
 		}
 
 	/*-------------------------------------------------------------------------
@@ -735,8 +584,8 @@
 
 						foreach($related_field_ids as $related_field_id) {
 							try {
-								$return = Symphony::Database()->fetchCol("id", sprintf("
-									SELECT
+								$return = Symphony::Database()->fetchCol("id", sprintf(
+									"SELECT
 										`entry_id` as `id`
 									FROM
 										`tbl_entries_data_%d`
@@ -745,8 +594,7 @@
 									LIMIT 1", $related_field_id, Lang::createHandle($value)
 								));
 
-								// Skipping returns wrong results when doing an
-								// AND operation, return 0 instead.
+								// Skipping returns wrong results when doing an AND operation, return 0 instead.
 								if(!empty($return)) {
 									$id = $return[0];
 									break;
@@ -777,25 +625,17 @@
 				}
 				else {
 					$condition = ($negation) ? 'NOT IN' : 'IN';
+					$joins .= " LEFT JOIN `tbl_entries_data_$field_id` AS `t$field_id` ON (`e`.`id` = `t$field_id`.entry_id) ";
+					$where .= " AND (`t$field_id`.relation_id $condition ('".implode("', '", $data)."') ";
 
-					// Apply a different where condition if we are using $negation. RE: #29
-					if($negation) {
-						$condition = 'NOT EXISTS';
-						$where .= " AND $condition (
-							SELECT *
-							FROM `tbl_entries_data_$field_id` AS `t$field_id`
-							WHERE `t$field_id`.entry_id = `e`.id AND `t$field_id`.relation_id IN (".implode(", ", $data).")
-						)";
+					if($null) {
+						$where .= " OR `t$field_id`.`relation_id` IS NULL) ";
 					}
-					// Normal filtering
 					else {
-						$joins .= " LEFT JOIN `tbl_entries_data_$field_id` AS `t$field_id` ON (`e`.`id` = `t$field_id`.entry_id) ";
-						$where .= " AND (`t$field_id`.relation_id $condition ('".implode("', '", $data)."') ";
-
-						// If we want entries with null values included in the result
-						$where .= ($null) ? " OR `t$field_id`.`relation_id` IS NULL) " : ") ";
+						$where .= ") ";
 					}
 				}
+
 			}
 
 			return true;

@@ -10,8 +10,8 @@
 		public function about() {
 			return array(
 				'name'			=> 'Debug DevKit',
-				'version'		=> '1.2.3',
-				'release-date'	=> '2013-02-22',
+				'version'		=> '1.2.2',
+				'release-date'	=> '2012-05-21',
 				'author'		=> array(
 					array(
 						'name' => 'Symphony Team',
