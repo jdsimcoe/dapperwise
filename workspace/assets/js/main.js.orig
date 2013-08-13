@@ -6,6 +6,13 @@
     };
     return $(document).ready(function() {
 
+<<<<<<< HEAD
+=======
+      $(".carousel").carousel({
+        interval: 7000
+      });
+
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
     });
   });
 })(jQuery, document, window);

@@ -2,7 +2,11 @@
 
 	require_once(TOOLKIT . '/class.datasource.php');
 
+<<<<<<< HEAD
 	Class datasourcenavigation extends NavigationDatasource{
+=======
+	Class datasourcenavigation extends NavigationDatasource {
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 
 		public $dsParamROOTELEMENT = 'navigation';
 		public $dsParamORDER = 'desc';
@@ -13,16 +17,25 @@
 
 		
 
+<<<<<<< HEAD
 		public function __construct($env=NULL, $process_params=true){
+=======
+		public function __construct($env=NULL, $process_params=true) {
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 			parent::__construct($env, $process_params);
 			$this->_dependencies = array();
 		}
 
+<<<<<<< HEAD
 		public function about(){
+=======
+		public function about() {
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 			return array(
 				'name' => 'Navigation',
 				'author' => array(
 					'name' => 'Jonathan Simcoe',
+<<<<<<< HEAD
 					'website' => 'http://dtrmn',
 					'email' => 'jdsimcoe@gmail.com'),
 				'version' => 'Symphony 2.3.1',
@@ -35,6 +48,22 @@
 		}
 
 		public function allowEditorToParse(){
+			return true;
+		}
+
+=======
+					'website' => 'http://dapperwise.dev',
+					'email' => 'jonathan@simko.io'),
+				'version' => 'Symphony 2.3.3',
+				'release-date' => '2013-08-12T14:43:46+00:00'
+			);
+		}
+
+		public function getSource() {
+			return 'navigation';
+		}
+
+		public function allowEditorToParse() {
 			return true;
 		}
 
@@ -59,4 +88,5 @@
 			return $result;
 		}
 
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 	}

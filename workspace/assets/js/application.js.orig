@@ -41,7 +41,11 @@ if(!jQuery)throw new Error("Bootstrap requires jQuery");+function(a){"use strict
 					rHeight *= 2;
 				}
 
+<<<<<<< HEAD
 				rImage = rServer.replace('width', rWidth).replace('height', rHeight).replace('anchor', rAnchor).replace('filename', filename);
+=======
+				rImage = rServer.replace('width', rWidth).replace('height', rHeight).replace('responsimageanchor', rAnchor).replace('filename', filename);
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 
 				if(filename !== 'disabled') {
 					rThis.attr('src', rImage);
@@ -59,12 +63,16 @@ if(!jQuery)throw new Error("Bootstrap requires jQuery");+function(a){"use strict
 			}
 		});
 
+<<<<<<< HEAD
 		window.onorientationchange = function() {      
 			setTimeout(responsimage, 0); 
+=======
+		window.onorientationchange = function() {
+			setTimeout(responsimage, 0);
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 		};
 	});
-}(jQuery, window, Date));
-;(function($, document, window) {
+}(jQuery, window, Date));;(function($, document, window) {
   "use strict";
   return $(function() {
     $.fn.exists = function() {
@@ -72,6 +80,13 @@ if(!jQuery)throw new Error("Bootstrap requires jQuery");+function(a){"use strict
     };
     return $(document).ready(function() {
 
+<<<<<<< HEAD
+=======
+      $(".carousel").carousel({
+        interval: 7000
+      });
+
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
     });
   });
 })(jQuery, document, window);

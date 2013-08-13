@@ -31,7 +31,11 @@
 					rHeight *= 2;
 				}
 
+<<<<<<< HEAD
 				rImage = rServer.replace('width', rWidth).replace('height', rHeight).replace('anchor', rAnchor).replace('filename', filename);
+=======
+				rImage = rServer.replace('width', rWidth).replace('height', rHeight).replace('responsimageanchor', rAnchor).replace('filename', filename);
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 
 				if(filename !== 'disabled') {
 					rThis.attr('src', rImage);
@@ -49,8 +53,13 @@
 			}
 		});
 
+<<<<<<< HEAD
 		window.onorientationchange = function() {      
 			setTimeout(responsimage, 0); 
+=======
+		window.onorientationchange = function() {
+			setTimeout(responsimage, 0);
+>>>>>>> 7e6d98b171453905c4dde369ea8155a92057bb31
 		};
 	});
 }(jQuery, window, Date));
