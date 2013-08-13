@@ -5,7 +5,7 @@
 	 */
 
 	/**
-	 * The `FrontendPage` class represents a page of the website that is powered
+	 * The FrontendPage class represents a page of the website that is powered
 	 * by Symphony. It takes the current URL and resolves it to a page as specified
 	 * in Symphony which involves deducing the parameters from the URL, ensuring
 	 * this page is accessible and exists, setting the correct Content-Type for the page
@@ -16,6 +16,9 @@
 	 */
 
 	require_once(TOOLKIT . '/class.xsltpage.php');
+	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	require_once(TOOLKIT . '/class.eventmanager.php');
+	require_once(TOOLKIT . '/class.extensionmanager.php');
 
 	Class FrontendPage extends XSLTPage {
 
@@ -151,15 +154,10 @@
 		 * The page source after the XSLT has transformed this page's XML. This would be
 		 * exactly the same as the 'view-source' from your browser
 		 */
-		public function generate($page = null) {
+		public function generate($page) {
 			$full_generate = true;
 			$devkit = null;
 			$output = null;
-
-			$this->addHeaderToPage('Cache-Control', 'no-cache, must-revalidate, max-age=0');
-			$this->addHeaderToPage('Expires', 'Mon, 12 Dec 1982 06:14:00 GMT');
-			$this->addHeaderToPage('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT');
-			$this->addHeaderToPage('Pragma', 'no-cache');
 
 			if ($this->is_logged_in) {
 				/**
@@ -215,10 +213,10 @@
 					}
 
 					if(in_array('404', $this->_pageData['type'])){
-						$this->setHttpStatus(self::HTTP_STATUS_NOT_FOUND);
+						$this->addHeaderToPage('Status', '404 Not Found', 404);
 					}
-					else if(in_array('403', $this->_pageData['type'])){
-						$this->setHttpStatus(self::HTTP_STATUS_FORBIDDEN);
+					elseif(in_array('403', $this->_pageData['type'])){
+						$this->addHeaderToPage('Status', '403 Forbidden', 403);
 					}
 				}
 
@@ -230,10 +228,7 @@
 				 */
 				Symphony::ExtensionManager()->notifyMembers('FrontendPreRenderHeaders', '/frontend/');
 
-				$backup_param = $this->_param;
-				$this->_param['current-query-string'] = General::wrapInCDATA($this->_param['current-query-string']);
 				$output = parent::generate();
-				$this->_param = $backup_param;
 
 				/**
 				 * Immediately after generating the page. Provided with string containing page source
@@ -254,13 +249,8 @@
 						$errstr .= 'Line: ' . $val['line'] . ' - ' . $val['message'] . PHP_EOL;
 					}
 
-					Frontend::instance()->throwCustomError(
-						trim($errstr),
-						__('XSLT Processing Error'),
-						Page::HTTP_STATUS_ERROR,
-						'xslt',
-						array('proc' => clone $this->Proc)
-					);
+					GenericExceptionHandler::$enabled = true;
+					throw new SymphonyErrorPage(trim($errstr), NULL, 'xslt', array('proc' => clone $this->Proc));
 				}
 
 				Symphony::Profiler()->sample('Page creation complete');
@@ -332,15 +322,14 @@
 			// Get max upload size from php and symphony config then choose the smallest
 			$upload_size_php = ini_size_to_bytes(ini_get('upload_max_filesize'));
 			$upload_size_sym = Symphony::Configuration()->get('max_upload_size','admin');
-			$date = new DateTime();
 
 			$this->_param = array(
-				'today' => $date->format('Y-m-d'),
-				'current-time' => $date->format('H:i'),
-				'this-year' => $date->format('Y'),
-				'this-month' => $date->format('m'),
-				'this-day' => $date->format('d'),
-				'timezone' => $date->format('P'),
+				'today' => DateTimeObj::get('Y-m-d'),
+				'current-time' => DateTimeObj::get('H:i'),
+				'this-year' => DateTimeObj::get('Y'),
+				'this-month' => DateTimeObj::get('m'),
+				'this-day' => DateTimeObj::get('d'),
+				'timezone' => DateTimeObj::get('P'),
 				'website-name' => Symphony::Configuration()->get('sitename', 'general'),
 				'page-title' => $page['title'],
 				'root' => URL,
@@ -350,13 +339,13 @@
 				'current-page-id' => $page['id'],
 				'current-path' => ($current_path == '') ? '/' : $current_path,
 				'parent-path' => '/' . $page['path'],
-				'current-query-string' => self::sanitizeParameter($querystring),
+				'current-query-string' => '<![CDATA[' . self::sanitizeParameter($querystring) . ']]>',
 				'current-url' => URL . $current_path,
 				'upload-limit' => min($upload_size_php, $upload_size_sym),
 				'symphony-version' => Symphony::Configuration()->get('version', 'symphony'),
 			);
 
-			if(isset($this->_env['url']) && is_array($this->_env['url'])){
+			if(is_array($this->_env['url'])){
 				foreach($this->_env['url'] as $key => $val) $this->_param[$key] = $val;
 			}
 
@@ -386,8 +375,8 @@
 				}
 			}
 
-			if(is_array($_COOKIE[__SYM_COOKIE_PREFIX__]) && !empty($_COOKIE[__SYM_COOKIE_PREFIX__])){
-				foreach($_COOKIE[__SYM_COOKIE_PREFIX__] as $key => $val){
+			if(is_array($_COOKIE[__SYM_COOKIE_PREFIX_]) && !empty($_COOKIE[__SYM_COOKIE_PREFIX_])){
+				foreach($_COOKIE[__SYM_COOKIE_PREFIX_] as $key => $val){
 					$this->_param['cookie-' . $key] = $val;
 				}
 			}
@@ -424,7 +413,7 @@
 			Symphony::Profiler()->seed($xml_build_start);
 			Symphony::Profiler()->sample('XML Built', PROFILE_LAP);
 
-			if(isset($this->_env['pool']) && is_array($this->_env['pool']) && !empty($this->_env['pool'])) {
+			if(is_array($this->_env['pool']) && !empty($this->_env['pool'])) {
 				foreach($this->_env['pool'] as $handle => $p){
 
 					if(!is_array($p)) $p = array($p);
@@ -487,7 +476,7 @@
 					$param->setValue(General::sanitize($value[0]));
 				}
 				else if($key == 'current-query-string') {
-					$param->setValue(General::wrapInCDATA($value));
+					$param->setValue($value);
 				}
 				else {
 					$param->setValue(General::sanitize($value));
@@ -616,10 +605,12 @@
 				$row = PageManager::fetchPageByType('403');
 
 				if(empty($row)){
-					Frontend::instance()->throwCustomError(
+					GenericExceptionHandler::$enabled = true;
+					throw new SymphonyErrorPage(
 						__('Please login to view this page.') . ' <a href="' . SYMPHONY_URL . '/login/">' . __('Take me to the login page') . '</a>.',
 						__('Forbidden'),
-						Page::HTTP_STATUS_FORBIDDEN
+						'generic',
+						array('header' => 'HTTP/1.0 403 Forbidden')
 					);
 				}
 
@@ -791,7 +782,7 @@
 			$dependencies = array();
 
 			foreach ($datasources as $handle) {
-				$pool[$handle] = DatasourceManager::create($handle, array(), false);
+				$pool[$handle] =& DatasourceManager::create($handle, array(), false);
 				$dependencies[$handle] = $pool[$handle]->getDependencies();
 			}
 
@@ -799,21 +790,14 @@
 
 			foreach ($dsOrder as $handle) {
 				Symphony::Profiler()->seed();
+
 				$queries = Symphony::Database()->queryCount();
 
-				// default to no XML
-				$xml = null;
 				$ds = $pool[$handle];
+				$ds->processParameters(array('env' => $this->_env, 'param' => $this->_param));
 
-				// Handle redirect on empty setting correctly RE: #1539
-				try {
-					$ds->processParameters(array('env' => $this->_env, 'param' => $this->_param));
-				}
-				catch(FrontendPageNotFoundException $e){
-					// Work around. This ensures the 404 page is displayed and
-					// is not picked up by the default catch() statement below
-					FrontendPageNotFoundExceptionHandler::render($e);
-				}
+				// default to no XML
+				$xml = NULL;
 
 				/**
 				 * Allows extensions to execute the data source themselves (e.g. for caching)
@@ -875,7 +859,9 @@
 				}
 
 				$queries = Symphony::Database()->queryCount() - $queries;
+
 				Symphony::Profiler()->sample($handle, PROFILE_LAP, 'Datasource', $queries);
+
 				unset($ds);
 			}
 		}
@@ -896,9 +882,9 @@
 
 			foreach($dependenciesList as $handle => $dependencies) {
 				foreach($dependencies as $i => $dependency) {
-					$dependency = explode('.',$dependency);
-					$dependenciesList[$handle][$i] = reset($dependency);
+					$dependenciesList[$handle][$i] = reset(explode('.',$dependency));
 				}
+
 			}
 
 			$orderedList = array();
@@ -907,6 +893,7 @@
 			// 1. First do a cleanup of each dependency list, removing non-existant DS's and find
 			//	  the ones that have no dependencies, removing them from the list
 			foreach($dependenciesList as $handle => $dependencies){
+
 				$dependenciesList[$handle] = @array_intersect($dsKeyArray, $dependencies);
 
 				if(empty($dependenciesList[$handle])){
@@ -920,6 +907,7 @@
 			//	  or there are circular dependencies (list doesn't change between iterations
 			//	  of the while loop)
 			do{
+
 				$last_count = count($dependenciesList);
 
 				foreach($dependenciesList as $handle => $dependencies){
@@ -928,12 +916,10 @@
 						unset($dependenciesList[$handle]);
 					}
 				}
-			}
-			while(!empty($dependenciesList) && $last_count > count($dependenciesList));
 
-			if(!empty($dependenciesList)) {
-				$orderedList = array_merge($orderedList, array_keys($dependenciesList));
-			}
+			}while(!empty($dependenciesList) && $last_count > count($dependenciesList));
+
+			if(!empty($dependenciesList)) $orderedList = array_merge($orderedList, array_keys($dependenciesList));
 
 			return array_map(create_function('$a', "return str_replace('-', '_', \$a);"), $orderedList);
 		}
@@ -971,7 +957,7 @@
 		 *  The sanitized string
 		 */
 		public static function sanitizeParameter($parameter) {
-			return XMLElement::stripInvalidXMLCharacters($parameter);
+			return XMLElement::stripInvalidXMLCharacters(utf8_encode(urldecode($parameter)));
 		}
 
 		/**
@@ -1009,4 +995,3 @@
 		}
 
 	}
-

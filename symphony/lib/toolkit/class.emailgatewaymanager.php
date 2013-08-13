@@ -158,7 +158,6 @@
 		}
 
 		public static function about($name) {
-			$name = strtolower($name);
 			$classname = self::__getClassName($name);
 			$path = self::__getDriverPath($name);
 
@@ -184,7 +183,6 @@
 		 *  If the gateway is not found, an error is triggered.
 		 */
 		public static function create($name){
-			$name = strtolower($name);
 			$classname = self::__getClassName($name);
 			$path = self::__getDriverPath($name);
 

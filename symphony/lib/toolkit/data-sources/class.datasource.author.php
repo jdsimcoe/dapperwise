@@ -51,7 +51,8 @@
 
 		}
 
-		public function execute(array &$param_pool = null) {
+		public function execute(&$param_pool) {
+
 			$author_ids = array();
 
 			if(is_array($this->dsParamFILTERS) && !empty($this->dsParamFILTERS)){
@@ -75,7 +76,7 @@
 
 				}
 
-				$authors = AuthorManager::fetchByID(array_values($author_ids));
+				$authors = AuthorManager::fetchByID(array_values($author_ids), $this->dsParamSORT, $this->dsParamORDER);
 			}
 			else $authors = AuthorManager::fetch($this->dsParamSORT, $this->dsParamORDER);
 
@@ -92,29 +93,13 @@
 
 				if(!$this->_param_output_only) $result = new XMLElement($this->dsParamROOTELEMENT);
 
-				$singleParam = false;
-				$key = 'ds-' . $this->dsParamROOTELEMENT;
+				foreach($authors as $author){
 
-				if(isset($this->dsParamPARAMOUTPUT)) {
-					if(!is_array($this->dsParamPARAMOUTPUT)) {
-						$this->dsParamPARAMOUTPUT = array($this->dsParamPARAMOUTPUT);
-					}
+					if(isset($this->dsParamPARAMOUTPUT)){
+						$key = 'ds-' . $this->dsParamROOTELEMENT;
+						if(!is_array($param_pool[$key])) $param_pool[$key] = array();
 
-					$singleParam = count($this->dsParamPARAMOUTPUT) === 1;
-				}
-
-				foreach($authors as $author) {
-					if(isset($this->dsParamPARAMOUTPUT)) foreach($this->dsParamPARAMOUTPUT as $param) {
-						// The new style of paramater is `ds-datasource-handle.field-handle`
-						$param_key = $key . '.' . str_replace(':', '-', $param);
-
-						if(!is_array($param_pool[$param_key])) $param_pool[$param_key] = array();
-						$param_pool[$param_key][] = ($param === 'name' ? $author->getFullName() : $author->get($param));
-
-						if($singleParam) {
-							if(!is_array($param_pool[$key])) $param_pool[$key] = array();
-							$param_pool[$key][] = ($param === 'name' ? $author->getFullName() : $author->get($param));
-						}
+						$param_pool[$key][] = ($this->dsParamPARAMOUTPUT == 'name' ? $author->getFullName() : $author->get($this->dsParamPARAMOUTPUT));
 					}
 
 					if($this->_param_output_only) continue;

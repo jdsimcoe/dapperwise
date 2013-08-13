@@ -9,13 +9,16 @@
 	$Page->Html->setDTD('<!DOCTYPE html>');
 	$Page->Html->setAttribute('xml:lang', 'en');
 	$Page->addElementToHead(new XMLElement('meta', NULL, array('http-equiv' => 'Content-Type', 'content' => 'text/html; charset=UTF-8')), 0);
-	$Page->addStylesheetToHead(APPLICATION_URL . '/assets/css/symphony.css', 'screen', 30);
-	$Page->addStylesheetToHead(APPLICATION_URL . '/assets/css/symphony.frames.css', 'screen', 31);
+	$Page->addStylesheetToHead(SYMPHONY_URL . '/assets/css/symphony.css', 'screen', 30);
+	$Page->addStylesheetToHead(SYMPHONY_URL . '/assets/css/symphony.frames.css', 'screen', 31);
 
-	$Page->setHttpStatus($e->getHttpStatusCode());
+	$Page->addHeaderToPage('Status', '500 Internal Server Error', 500);
 	$Page->addHeaderToPage('Content-Type', 'text/html; charset=UTF-8');
 	$Page->addHeaderToPage('Symphony-Error-Type', 'database');
-	if(isset($e->getAdditional()->header)) { $Page->addHeaderToPage($e->getAdditional()->header); }
+
+	if(isset($e->getAdditional()->header)) {
+		$Page->addHeaderToPage($e->getAdditional()->header);
+	}
 
 	$Page->setTitle(__('%1$s &ndash; %2$s', array(__('Symphony'), __('Database Error'))));
 	$Page->Body->setAttribute('id', 'error');
@@ -33,6 +36,7 @@
 	$Page->Body->appendChild($div);
 
 	$output = $Page->generate();
+	header(sprintf('Content-Length: %d', strlen($output)));
 	echo $output;
 
 	exit;

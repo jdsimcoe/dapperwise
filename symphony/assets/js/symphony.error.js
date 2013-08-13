@@ -6,8 +6,11 @@
 
 	$(document).ready(function() {
 
+		// Init Symphony
+		Symphony.init();
+
 		// Init collapsibles
-		var collapsible = $('.frame').symphonyCollapsible({
+		var collapsible = $('.frame ul').symphonyCollapsible({
 			items: 'li',
 			handles: 'header',
 			content: '.content',
@@ -21,4 +24,4 @@
 		};
 	});
 
-})(window.jQuery);
+})(jQuery.noConflict());

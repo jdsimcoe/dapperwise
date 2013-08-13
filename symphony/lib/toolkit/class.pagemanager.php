@@ -273,7 +273,7 @@
 			$children = PageManager::fetchChildPages($page_id);
 
 			foreach ($children as $child) {
-				$child_id = (int)$child['id'];
+				$child_id = $child['id'];
 				$fields = array(
 					'path' => $page_path
 				);
@@ -286,7 +286,7 @@
 					$success = false;
 				}
 
-				$success = PageManager::editPageChildren($child_id, $page_path . '/' . $child['handle']);
+				self::editPageChildren($child_id, $page_path . '/' . $child['handle']);
 			}
 
 			return $success;

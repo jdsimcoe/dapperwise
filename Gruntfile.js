@@ -7,21 +7,21 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-less');
-  grunt.loadNpmTasks('grunt-growl');
+  grunt.loadNpmTasks('grunt-notify');
 
 
   grunt.initConfig({
 
     jshint : {
       all: [
-        'workspace/themes/active/js/main.js'
+        'workspace/assets/js/main.js'
       ]
     },
 
     less: {
       dev: {
         files: {
-          "workspace/themes/active/css/main.css": "workspace/themes/active/less/main.less"
+          "workspace/assets/css/main.css": "workspace/assets/less/main.less"
         }
       },
       prod: {
@@ -29,7 +29,7 @@ module.exports = function (grunt) {
           yuicompress: true
         },
         files: {
-          "workspace/themes/active/css/main.css": "workspace/themes/active/less/main.less"
+          "workspace/assets/css/main.css": "workspace/assets/less/main.less"
         }
       }
     },
@@ -40,13 +40,11 @@ module.exports = function (grunt) {
       },
       dist: {
         src : [
-          'workspace/bootstrap/assets/js/jquery.js',
-          'workspace/bootstrap/dist/js/bootstrap.min.js',
-          'workspace/js/responsimage.js',
-          'workspace/js/offcanvasmenu.js',
-          'workspace/js/audio.js',
-          'workspace/themes/active/js/main.js'],
-        dest: 'workspace/themes/active/js/application.js'
+          'workspace/assets/bootstrap/assets/js/jquery.js',
+          'workspace/assets/bootstrap/dist/js/bootstrap.min.js',
+          'workspace/assets/js/responsimage.js',
+          'workspace/assets/js/main.js'],
+        dest: 'workspace/assets/js/application.js'
       }
     },
 
@@ -56,12 +54,7 @@ module.exports = function (grunt) {
       },
       bootstrap: {
         files: {
-          'workspace/themes/active/js/application.min.js': ['workspace/themes/active/js/application.js']
-        }
-      },
-      jquery: {
-        files: {
-          'workspace/themes/active/js/jquery.min.js': ['workspace/bootstrap/assets/js/jquery.js']
+          'workspace/assets/js/application.min.js': ['workspace/assets/js/application.js']
         }
       }
     },
@@ -69,29 +62,18 @@ module.exports = function (grunt) {
     watch: {
       cssdev: {
         files: '**/*.less',
-        tasks: ['less:dev', 'growl:watch']
+        tasks: ['less:dev']
       },
       cssprod: {
         files: '<config:watch.cssdev.files>',
-         tasks: ['less:prod', 'growl:watch']
-      }
-    },
-
-    growl : {
-      main : {
-        title : 'Grunt.js',
-        message : 'Grunt was run successfully!'
-      },
-      watch : {
-        title : 'Grunt.js',
-        message : 'Grunt is watching your files...'
+         tasks: ['less:prod']
       }
     }
 
 });
 
 // Main task
-grunt.registerTask('cssdev', ['less:dev', 'growl:main']);
-grunt.registerTask('cssprod', ['less:prod', 'growl:main']);
-grunt.registerTask('jsprod', ['jshint', 'concat', 'uglify:bootstrap', 'uglify:jquery']);
-grunt.registerTask('default', ['jshint', 'concat', 'uglify:bootstrap', 'uglify:jquery', 'less:prod', 'growl:main'])};
+grunt.registerTask('cssdev', ['less:dev']);
+grunt.registerTask('cssprod', ['less:prod']);
+grunt.registerTask('jsprod', ['jshint', 'concat', 'uglify:bootstrap']);
+grunt.registerTask('default', ['jshint', 'concat', 'uglify:bootstrap', 'less:prod'])};

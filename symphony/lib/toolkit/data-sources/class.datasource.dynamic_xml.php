@@ -17,7 +17,7 @@
 
 	Class DynamicXMLDatasource extends Datasource {
 
-		public function execute(array &$param_pool = null) {
+		public function execute(&$param_pool) {
 
 			$result = new XMLElement($this->dsParamROOTELEMENT);
 

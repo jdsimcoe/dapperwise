@@ -12,7 +12,7 @@
 	 */
 	Class StaticXMLDatasource extends Datasource {
 
-		public function execute(array &$param_pool = null) {
+		public function execute(&$param_pool) {
 			include_once(TOOLKIT . '/class.xsltprocess.php');
 
 			$result = new XMLElement($this->dsParamROOTELEMENT);

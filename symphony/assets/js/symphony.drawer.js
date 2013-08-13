@@ -24,7 +24,7 @@
 		var objects = this,
 			wrapper = $('#wrapper'),
 			context = $('#context'),
-			contents = $('#contents > form'),
+			contents = $('#contents'),
 			settings = {
 				verticalWidth: 300,
 				speed: 'fast'
@@ -43,7 +43,11 @@
 				buttons = $('.button.drawer'),
 				button = buttons.filter('[href="#' + drawer.attr('id') + '"]'),
 				samePositionButtons = buttons.filter('.' + position),
-				context = drawer.data('context') ? '.' + drawer.data('context') : '';
+				context = drawer.data('context') ? '.' + drawer.data('context') : '',
+				top = contents.offset().top,
+				verticals = $('div.drawer.vertical-left, div.drawer.vertical-right').filter(function(index) {
+					return $(this).data('open');
+				});
 
 			drawer.trigger('expandstart.drawer');
 
@@ -60,6 +64,7 @@
 
 			if (position === 'vertical-left') {
 				drawer.css({
+					top: top,
 					width: 0,
 					display: 'block'
 				})
@@ -78,6 +83,7 @@
 			}
 			else if (position === 'vertical-right') {
 				drawer.css({
+					top: top,
 					width: 0,
 					display: 'block'
 				})
@@ -99,7 +105,11 @@
 					height: 'show'
 				}, {
 					duration: speed,
+					step: function(now, fx) {
+						verticals.trigger('update.drawer');
+					},
 					complete: function() {
+						verticals.trigger('update.drawer');
 						drawer.trigger('expandstop.drawer');
 					}
 				});
@@ -128,7 +138,11 @@
 				position = drawer.data('position'),
 				buttons = $('.button.drawer'),
 				button = buttons.filter('[href="#' + drawer.attr('id') + '"]'),
-				context = drawer.data('context') ? '.' + drawer.data('context') : '';
+				context = drawer.data('context') ? '.' + drawer.data('context') : '',
+				top = contents.offset().top,
+				verticals = $('div.drawer.vertical-left, div.drawer.vertical-right').filter(function(index) {
+					return $(this).data('open');
+				});
 
 			drawer.trigger('collapsestart.drawer');
 
@@ -179,7 +193,11 @@
 					height: 'hide'
 				}, {
 					duration: speed,
+					step: function(now, fx) {
+						verticals.trigger('update.drawer');
+					},
 					complete: function() {
+						verticals.trigger('update.drawer');
 						drawer.trigger('collapsestop.drawer');
 					}
 				});
@@ -198,6 +216,18 @@
 
 			wrapper.removeClass('drawer-' + position);
 			drawer.data('open', false);
+		});
+
+		// Update drawer
+		objects.on('update.drawer', function update(event) {
+			var drawer = $(this),
+			position = drawer.data('position');
+
+			if (position === 'vertical-left' || position === 'vertical-right') {
+				drawer.css({
+					top: contents.offset().top
+				});
+			}
 		});
 
 	/*-------------------------------------------------------------------------
@@ -241,4 +271,4 @@
 		return objects;
 	};
 
-})(window.jQuery);
+})(jQuery.noConflict());

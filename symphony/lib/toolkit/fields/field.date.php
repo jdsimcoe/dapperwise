@@ -21,9 +21,6 @@
 
 		private $key;
 
-		protected static $min_date = '1000-01-01 00:00:00';
-		protected static $max_date = '9999-12-31 23:59:59';
-
 		public function __construct() {
 			parent::__construct();
 			$this->_name = __('Date');
@@ -202,15 +199,13 @@
 				$later = $parts['end'];
 
 				// Switch between earlier than and later than logic
-				// The earlier/later range is defined by MySQL's support. RE: #1560
-				// @link http://dev.mysql.com/doc/refman/5.0/en/datetime.html
 				switch($match[2]) {
 					case 'later':
-						$string = $later . ' to ' . self::$max_date;
+						$string = $later . ' to 2038-01-01 23:59:59';
 						break;
 
 					case 'earlier':
-						$string = self::$min_date . ' to ' . $earlier;
+						$string = '0000-01-01 to ' . $earlier;
 						break;
 				}
 			}
@@ -272,12 +267,9 @@
 
 			if($andOperation) {
 				foreach($data as $date) {
-					// Prevent the DateTimeObj creating a range that isn't supported by MySQL.
-					$start = ($date['start'] === self::$min_date) ? self::$min_date : DateTimeObj::getGMT('Y-m-d H:i:s', $date['start']);
-					$end = ($date['end'] === self::$max_date) ? self::$max_date : DateTimeObj::getGMT('Y-m-d H:i:s', $date['end']);
-
 					$joins .= " LEFT JOIN `tbl_entries_data_$field_id` AS `t$field_id".$this->key."` ON `e`.`id` = `t$field_id".$this->key."`.entry_id ";
-					$where .= " AND (`t$field_id".$this->key."`.date >= '" . $start . "' AND `t$field_id".$this->key."`.date <= '" . $end . "') ";
+					$where .= " AND (`t$field_id".$this->key."`.date >= '" . DateTimeObj::getGMT('Y-m-d H:i:s', $date['start']) . "'
+								AND `t$field_id".$this->key."`.date <= '" . DateTimeObj::getGMT('Y-m-d H:i:s', $date['end']) . "') ";
 
 					$this->key++;
 				}
@@ -287,11 +279,8 @@
 				$tmp = array();
 
 				foreach($data as $date) {
-					// Prevent the DateTimeObj creating a range that isn't supported by MySQL.
-					$start = ($date['start'] === self::$min_date) ? self::$min_date : DateTimeObj::getGMT('Y-m-d H:i:s', $date['start']);
-					$end = ($date['end'] === self::$max_date) ? self::$max_date : DateTimeObj::getGMT('Y-m-d H:i:s', $date['end']);
-
-					$tmp[] = "`t$field_id".$this->key."`.date >= '" . $start . "' AND `t$field_id".$this->key."`.date <= '" . $end . "' ";
+					$tmp[] = "`t$field_id".$this->key."`.date >= '" . DateTimeObj::getGMT('Y-m-d H:i:s', $date['start']) . "'
+								AND `t$field_id".$this->key."`.date <= '" . DateTimeObj::getGMT('Y-m-d H:i:s', $date['end']) . "' ";
 				}
 
 				$joins .= " LEFT JOIN `tbl_entries_data_$field_id` AS `t$field_id".$this->key."` ON `e`.`id` = `t$field_id".$this->key."`.entry_id ";
@@ -352,7 +341,7 @@
 			$value = null;
 
 			// New entry
-			if((is_null($data) || empty($data)) && is_null($flagWithError) && $this->get('pre_populate') == 'yes') {
+			if(is_null($data) && is_null($flagWithError) && $this->get('pre_populate') == 'yes') {
 				$value = DateTimeObj::format('now', DateTimeObj::getSetting('datetime_format'));
 			}
 
@@ -470,16 +459,15 @@
 		Import:
 	-------------------------------------------------------------------------*/
 
-		public function getImportModes() {
-			return array(
-				'getValue' =>		ImportableField::STRING_VALUE,
-				'getPostdata' =>	ImportableField::ARRAY_VALUE
-			);
-		}
-
-		public function prepareImportValue($data, $mode, $entry_id = null) {
-			$value = $status = $message = null;
-			$modes = (object)$this->getImportModes();
+		/**
+		 * Give the field some data and ask it to return a value.
+		 *
+		 * @param mixed $data
+		 * @param integer $entry_id
+		 * @return array
+		 */
+		public function prepareImportValue($data, $entry_id = null) {
+			$value = $date = null;
 
 			// Prepopulate date:
 			if ($data === null || $data === '') {
@@ -501,16 +489,13 @@
 			// Valid date found:
 			if (isset($timestamp)) {
 				$value = DateTimeObj::get('c', $timestamp);
+				$date = DateTimeObj::getGMT('Y-m-d H:i:s', $timestamp);
 			}
 
-			if($mode === $modes->getValue) {
-				return $value;
-			}
-			else if($mode === $modes->getPostdata) {
-				return $this->processRawFieldData($data, $status, $message, true, $entry_id);
-			}
-
-			return null;
+			return array(
+				'value' =>	$value,
+				'date' =>	$date
+			);
 		}
 
 	/*-------------------------------------------------------------------------
@@ -608,7 +593,7 @@
 						FROM tbl_entries_data_%d AS `ed`
 						WHERE entry_id = e.id
 					) %s',
-					'`ed`.date',
+					'`ed`.value',
 					$this->get('id'),
 					$order
 				);

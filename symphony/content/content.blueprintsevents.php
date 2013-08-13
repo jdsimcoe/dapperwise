@@ -69,22 +69,17 @@
 			}
 
 			$isEditing = ($readonly ? true : false);
-			$fields = array("name"=>null, "filters"=>null);
-			$about = array("name"=>null);
+			$fields = array();
 			$providers = Symphony::ExtensionManager()->getProvidersOf(iProvider::EVENT);
 
 			if(isset($_POST['fields'])) {
 				$fields = $_POST['fields'];
-
-				if($this->_context[0] == 'edit') {
-					$isEditing = true;
-				}
 			}
 
 			else if($this->_context[0] == 'edit' || $this->_context[0] == 'info') {
 				$isEditing = true;
 				$handle = $this->_context[1];
-				$existing = EventManager::create($handle);
+				$existing =& EventManager::create($handle);
 				$about = $existing->about();
 
 				if ($this->_context[0] == 'edit' && !$existing->allowEditorToParse()) {
@@ -110,14 +105,6 @@
 						$fields['filters'] = $existing->eParamFILTERS;
 					}
 				}
-			}
-
-			// Handle name on edited changes, or from reading an edited datasource
-			if(isset($about['name'])) {
-				$name = $about['name'];
-			}
-			else if(isset($fields['name'])) {
-				$name = $fields['name'];
 			}
 
 			$this->setPageType('form');
@@ -153,13 +140,11 @@
 				$label = Widget::Label(__('Source'));
 				$sections = SectionManager::fetch(NULL, 'ASC', 'name');
 				$options = array();
-				$section_options = array();
-				$source = isset($fields['source']) ? $fields['source'] : null;
 
 				if(is_array($sections) && !empty($sections)) {
-					$section_options = array('label' => __('Sections'), 'options' => array());
+					$section_options = array('label' => __('Sections'), 'data-label' => 'Sections', 'options' => array());
 					foreach($sections as $s) {
-						$section_options['options'][] = array($s->get('id'), $source == $s->get('id'), General::sanitize($s->get('name')));
+						$section_options['options'][] = array($s->get('id'), ($fields['source'] == $s->get('id')), General::sanitize($s->get('name')));
 					}
 				}
 
@@ -198,11 +183,13 @@
 				$fieldset->appendChild($group);
 				$this->Form->appendChild($fieldset);
 
-				// Filters
+			// Filters
+				$div = new XMLElement('div');
+				$div->setAttribute('id', 'Sections');
+				$div->setAttribute('class', 'pickable');
+
 				$fieldset = new XMLElement('fieldset');
-				$fieldset->setAttribute('id', 'sections');
-				$fieldset->setAttribute('class', 'settings pickable');
-				$fieldset->setAttribute('data-relation', 'event-context');
+				$fieldset->setAttribute('class', 'settings');
 				$fieldset->appendChild(new XMLElement('legend', __('Filters')));
 				$p = new XMLElement('p',
 					__('Event Filters add additional conditions or actions to an event.')
@@ -210,7 +197,7 @@
 				$p->setAttribute('class', 'help');
 				$fieldset->appendChild($p);
 
-				$filters = isset($fields['filters']) ? $fields['filters'] : array();
+				$filters = is_array($fields['filters']) ? $fields['filters'] : array();
 				$options = array(
 					array('admin-only', in_array('admin-only', $filters), __('Admin Only')),
 					array('send-email', in_array('send-email', $filters), __('Send Notification Email')),
@@ -234,15 +221,24 @@
 				));
 
 				$fieldset->appendChild(Widget::Select('fields[filters][]', $options, array('multiple' => 'multiple')));
+				$div->appendChild($fieldset);
 
-				$this->Form->appendChild($fieldset);
+				$this->Form->appendChild($div);
 
 			// Providers
 				if(!empty($providers)) {
 					foreach($providers as $providerClass => $provider) {
-						if($isEditing && $fields['source'] !== call_user_func(array($providerClass, 'getSource'))) continue;
+						if (PHP_VERSION_ID >= 50300) {
+							if($isEditing && $fields['source'] !== $providerClass::getSource()) continue;
 
-						call_user_func_array(array($providerClass, 'buildEditor'), array($this->Form, &$this->_errors, $fields, $handle));
+							$providerClass::buildEditor($this->Form, $this->_errors, $fields, $handle);
+						}
+						// PHP 5.2 does not support late static binding..
+						else{
+							if($isEditing && $fields['source'] !== call_user_func(array($providerClass, 'getSource'))) continue;
+
+							call_user_func_array(array($providerClass, 'buildEditor'), array($this->Form, &$this->_errors, $fields, $handle));
+						}
 					}
 				}
 			}
@@ -271,22 +267,14 @@
 				$fieldset = new XMLElement('fieldset');
 				$fieldset->setAttribute('class', 'settings');
 				$fieldset->appendChild(new XMLElement('legend', __('Version')));
-				$version = array_key_exists('version', $about) ? $about['version'] : null;
-				$release_date = array_key_exists('release-date', $about) ? $about['release-date'] : filemtime(EventManager::__getDriverPath($handle));
-
-				if(preg_match('/^\d+(\.\d+)*$/', $version)) {
+				if(preg_match('/^\d+(\.\d+)*$/', $about['version'])) {
 					$fieldset->appendChild(
-						new XMLElement('p', __('%1$s released on %2$s', array($version, DateTimeObj::format($release_date, __SYM_DATE_FORMAT__))))
-					);
-				}
-				else if(!is_null($version)) {
-					$fieldset->appendChild(
-						new XMLElement('p', __('Created by %1$s at %2$s', array($version, DateTimeObj::format($release_date, __SYM_DATE_FORMAT__))))
+						new XMLElement('p', __('%1$s released on %2$s', array($about['version'], DateTimeObj::format($about['release-date'], __SYM_DATE_FORMAT__))))
 					);
 				}
 				else {
 					$fieldset->appendChild(
-						new XMLElement('p', __('Last modified on %s', array(DateTimeObj::format($release_date, __SYM_DATE_FORMAT__))))
+						new XMLElement('p', __('Created by %1$s at %2$s', array($about['version'], DateTimeObj::format($about['release-date'], __SYM_DATE_FORMAT__))))
 					);
 				}
 				$this->Form->appendChild($fieldset);
@@ -378,12 +366,19 @@
 
 			if(trim($fields['name']) == '') $this->_errors['name'] = __('This is a required field');
 			if(trim($fields['source']) == '') $this->_errors['source'] = __('This is a required field');
-			$filters = isset($fields['filters']) ? $fields['filters'] : array();
+			$filters = (is_array($fields['filters'])) ? $fields['filters'] : array();
 
 			// See if a Provided Datasource is saved
 			if (!empty($providers)) {
 				foreach($providers as $providerClass => $provider) {
-					if($fields['source'] == call_user_func(array($providerClass, 'getSource'))) {
+					if (PHP_VERSION_ID >= 50300) {
+						if($fields['source'] == $providerClass::getSource()) {
+							$providerClass::validate($fields, $this->_errors);
+							break;
+						}
+					}
+					// PHP 5.2 does not support late static binding..
+					else if($fields['source'] == call_user_func(array($providerClass, 'getSource'))) {
 						call_user_func_array(array($providerClass, 'validate'), array(&$fields, &$this->_errors));
 						break;
 					}

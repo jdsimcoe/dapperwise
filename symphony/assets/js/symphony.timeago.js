@@ -120,4 +120,4 @@
 		return objects;
 	};
 
-})(window.jQuery);
+})(jQuery.noConflict());

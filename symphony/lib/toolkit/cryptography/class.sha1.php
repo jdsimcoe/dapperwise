@@ -47,7 +47,7 @@
 		 * @return boolean
 		 * the result of the comparison
 		 */
-		public static function compare($input, $hash, $isHash=false){
+		public static function compare($input, $hash){
 			return ($hash == self::hash($input));
 		}
 	}

@@ -1,0 +1,39 @@
+.horizon(@color-text: #555, @color-background: #ffffff, @height: auto) {
+  background: @color-background;
+  color: @color-text;
+  height: @height;
+  padding: 4em 2em;
+
+  .icon-medium {
+    color: darken(@color-background, 10%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    .allcaps();
+    .center();
+    font-family: @fonts-sans;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 15px 0;
+  }
+
+  .lead {
+    font-family: @fonts-serif;
+    font-style: italic;
+    line-height: 1.6;
+    margin: 15px auto;
+    text-align: center;
+    width: 75%;
+  }
+
+  p {
+    font-family: @fonts-serif;
+    line-height: 1.8;
+    margin: 15px 0;
+  }
+}

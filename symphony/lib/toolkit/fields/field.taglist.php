@@ -224,12 +224,8 @@
 
 			$data = preg_split('/\,\s*/i', $data, -1, PREG_SPLIT_NO_EMPTY);
 			$data = array_map('trim', $data);
-			$result = array(
-				'value' =>	array(),
-				'handle' =>	array()
-			);
 
-			if(empty($data)) return null;
+			if(empty($data)) return;
 
 			// Do a case insensitive removal of duplicates
 			$data = General::array_remove_duplicates($data, true);
@@ -283,7 +279,7 @@
 			return parent::prepareTableValue(array('value' => General::sanitize($value)), $link, $entry_id = null);
 		}
 
-		public function getParameterPoolValue(array $data, $entry_id=NULL) {
+		public function getParameterPoolValue($data, $entry_id = null) {
 			return $this->prepareExportValue($data, ExportableField::LIST_OF + ExportableField::HANDLE, $entry_id);
 		}
 
@@ -291,29 +287,36 @@
 		Import:
 	-------------------------------------------------------------------------*/
 
-		public function getImportModes() {
-			return array(
-				'getValue' =>		ImportableField::STRING_VALUE,
-				'getPostdata' =>	ImportableField::ARRAY_VALUE
+		/**
+		 * Give the field some data and ask it to return a value.
+		 *
+		 * @param mixed $data
+		 * @param integer $entry_id
+		 * @return array|null
+		 */
+		public function prepareImportValue($data, $entry_id = null) {
+			$data = preg_split('/\,\s*/i', $data, -1, PREG_SPLIT_NO_EMPTY);
+			$data = array_map('trim', $data);
+			$result = array();
+
+			if (empty($data)) return null;
+
+			$result = array(
+				'value' =>	array(),
+				'handle' =>	array()
 			);
-		}
 
-		public function prepareImportValue($data, $mode, $entry_id = null) {
-			$message = $status = null;
-			$modes = (object)$this->getImportModes();
+			// Do a case insensitive removal of duplicates:
+			$data = General::array_remove_duplicates($data, true);
 
-			if(!is_array($data)) {
-				$data = array($data);
+			sort($data);
+
+			foreach ($data as $value) {
+				$result['value'][] = $value;
+				$result['handle'][] = Lang::createHandle($value);
 			}
 
-			if($mode === $modes->getValue) {
-				return implode(', ', $data);
-			}
-			else if($mode === $modes->getPostdata) {
-				return $this->processRawFieldData($data, $status, $message, true, $entry_id);
-			}
-
-			return null;
+			return $result;
 		}
 
 	/*-------------------------------------------------------------------------

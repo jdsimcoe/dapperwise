@@ -65,7 +65,7 @@
 			}
 
 			// Get available EmailGateways
-			$email_gateway_manager = new EmailGatewayManager;
+			$email_gateway_manager = new EmailGatewayManager($this);
 			$email_gateways = $email_gateway_manager->listAll();
 			if(count($email_gateways) >= 1){
 				$group = new XMLElement('fieldset', NULL, array('class' => 'settings condensed'));
@@ -128,9 +128,9 @@
 			if (!is_writable(CONFIG)) redirect(SYMPHONY_URL . '/system/preferences/');
 
 			/**
-			 * Extensions can listen for any custom actions that were added
-			 * through `AddCustomPreferenceFieldsets` or `AddCustomActions`
-			 * delegates.
+			 * This is where Extensions can hook on to custom actions they may need to provide
+			 * as a result of adding some custom actions through the `AddCustomPreferenceFieldsets`
+			 * delegate
 			 *
 			 * @delegate CustomActions
 			 * @param string $context
@@ -157,8 +157,12 @@
 
 				if (!is_array($this->_errors) || empty($this->_errors)) {
 
-					if(is_array($settings) && !empty($settings)) {
-						Symphony::Configuration()->setArray($settings, false);
+					if(is_array($settings) && !empty($settings)){
+						foreach($settings as $set => $values) {
+							foreach($values as $key => $val) {
+								Symphony::Configuration()->set($key, $val, $set);
+							}
+						}
 					}
 
 					Symphony::Configuration()->write();

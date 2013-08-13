@@ -76,8 +76,8 @@
 		 */
 		public function assignEntryId() {
 			$fields = $this->get();
-			$fields['creation_date'] = $fields['modification_date'] = DateTimeObj::get('Y-m-d H:i:s');
-			$fields['creation_date_gmt'] = $fields['modification_date_gmt'] = DateTimeObj::getGMT('Y-m-d H:i:s');
+			$fields['creation_date'] = $fields['modification_date'] = DateTimeObj::get('c');
+			$fields['creation_date_gmt'] = $fields['modification_date_gmt'] = DateTimeObj::getGMT('c');
 			$fields['author_id'] = is_null($this->get('author_id')) ? '1' : $this->get('author_id'); // Author_id cannot be null
 
 			Symphony::Database()->insert($fields, 'tbl_entries');
@@ -184,10 +184,8 @@
 		 *  returned.
 		 */
 		public function getData($field_id=null, $asObject=false){
-			$fieldData = isset($this->_data[$field_id]) ? $this->_data[$field_id] : array();
-
 			if(!$field_id) return $this->_data;
-			return ($asObject == true ? (object)$fieldData : $fieldData);
+			return ($asObject == true ? (object)$this->_data[$field_id] : $this->_data[$field_id]);
 		}
 
 		/**
@@ -245,8 +243,8 @@
 				$this->setData($field->get('field_id'), $result);
 			}
 
-			$this->set('modification_date', DateTimeObj::get('Y-m-d H:i:s'));
-			$this->set('modification_date_gmt', DateTimeObj::getGMT('Y-m-d H:i:s'));
+			$this->set('modification_date', DateTimeObj::get('c'));
+			$this->set('modification_date_gmt', DateTimeObj::getGMT('c'));
 
 			if(!$this->get('creation_date')) $this->set('creation_date', $this->get('modification_date'));
 			if(!$this->get('creation_date_gmt')) $this->set('creation_date_gmt', $this->get('modification_date_gmt'));

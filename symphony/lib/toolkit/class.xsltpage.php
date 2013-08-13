@@ -53,7 +53,8 @@
 		public function __construct(){
 
 			if(!XsltProcess::isXSLTProcessorAvailable()) {
-				Symphony::Engine()->throwCustomError(__('No suitable XSLT processor was found.'));
+                GenericExceptionHandler::$enabled = true;
+				throw new SymphonyErrorPage(__('No suitable XSLT processor was found.'));
 			}
 
 			$this->Proc = new XsltProcess;
@@ -151,13 +152,13 @@
 		 *
 		 * @return string
 		 */
-		public function generate($page = null){
+		public function generate(){
 
 			$result = $this->Proc->process($this->_xml, $this->_xsl, $this->_param, $this->_registered_php_functions);
 
 			if($this->Proc->isErrors()) return false;
 
-			parent::generate($page);
+			parent::generate();
 
 			return $result;
 		}

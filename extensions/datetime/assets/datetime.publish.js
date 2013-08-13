@@ -38,6 +38,8 @@
 		// Date and time
 		$('div.field-datetime').each(function datetime() {
 			var field = $(this),
+				help = field.find('i a.help'),
+				instructions = field.find('div.help'),
 				datetime = field.find('.dark.frame'),
 				dates = datetime.find('ol'),
 				headers = dates.find('header'),
@@ -82,22 +84,16 @@
 			});
 		
 			// Visualising
-			datetime.on('focus.datetime click.datetime', 'input', function(event) {
-				var input = $(this),
-					item = input.parents('li');
+			datetime.on('focus click', 'input', function(event) {
+				var input = $(this);
 
 				// Set focus
 				datetime.find('.focus').removeClass('focus');
 				input.parent().addClass('focus');
-				
-				// Expand	
-				if(item.is('.collapsed')) {
-					item.trigger('expand.collapsible');
-				}
 		
 				// Visualise
 				visualise(input);
-			});		
+			});
 			
 			// Setting
 			datetime.on('setdate.datetime', 'li', function(event, range, focus, mode) {
@@ -222,11 +218,19 @@
 				}			
 			});
 			
-			// Close calender
-			$('body').on('click.datetime', function(event) {
-				var target = $(event.target);
-				if(!target.is('input') && !target.is('textarea') && !target.is('select') && !target.is('button') && target.parents('.collapsible').parents('.field-datetime').length == 0) {
-					datetime.find('li').trigger('collapse.collapsible');
+			// Help
+			help.on('click.datetime', function(event) {
+				
+				// Show help
+				if(instructions.is(':hidden')) {
+					instructions.slideDown('fast');
+					help.text(help.attr('data-hide'));
+				}
+				
+				// Hide help
+				else {
+					instructions.slideUp('fast');
+					help.text(help.attr('data-show'));
 				}
 			});
 						
@@ -247,7 +251,7 @@
 			};
 		
 			// Validate and set date
-			var validate = function(input, date, show) {
+			var validate = function(input, date, visualise) {
 				var item = input.parents('li'),
 					datespan = input.parent(),
 					calendar = item.find('div.calendar');
@@ -268,8 +272,8 @@
 							if(parsed.status == 'valid') {
 								input.attr('data-timestamp', parsed.timestamp).val(parsed.date).removeClass('invalid');
 							
-								// Show
-								if(show === true) {
+								// Visualise
+								if(visualise === true) {
 									item.trigger('visualise', [{
 										start: datespan.find('.start').attr('data-timestamp'),
 										end: datespan.find('.end').attr('data-timestamp')
@@ -430,7 +434,7 @@
 				if(input.is('.start')) {
 					visualise(input);
 				}
-			}).trigger('load.datetime');
+			}).load();
 	
 			// Set errors
 			dates.find('input.invalid').parent('div').addClass('invalid');
@@ -455,11 +459,25 @@
 			
 			// Collapsible calendar
 			datetime.symphonyCollapsible({
-				items: 'li',
-				handles: 'header',
-				ignore: 'input',
-				storage: 'symphony.datetime.' + Symphony.Context.get('env').section_handle + '.' + field.attr('id') + '.'
-			});
+					items: 'li',
+					handles: 'header',
+					ignore: 'input',
+					storage: 'symphony.datetime.' + Symphony.Context.get('env').section_handle + '.' + field.attr('id') + '.'
+				})
+				.on('dblclick.datetime', 'input', function toggleAll(event) {
+	
+					// Expand/collapse all
+					$(this).parent().trigger('dblclick');
+				})
+				.on('click.datetime', 'input', function toggleInput(event) {
+					var input = $(this),
+						item = input.parents('li');
+					
+					// Expand	
+					if(item.is('.collapsed')) {
+						item.trigger('expand.collapsible');
+					}
+				});	
 		});
 
 	});

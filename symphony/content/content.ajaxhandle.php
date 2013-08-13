@@ -9,7 +9,7 @@
 	Class contentAjaxHandle extends AjaxPage{
 
 		public function handleFailedAuthorisation(){
-			$this->setHttpStatus(self::HTTP_STATUS_UNAUTHORIZED);
+			$this->_status = self::STATUS_UNAUTHORISED;
 			$this->_Result = json_encode(array('status' => __('You are not authorised to access this page.')));
 		}
 
@@ -19,7 +19,7 @@
 			$this->_Result = json_encode(Lang::createHandle($string, 255, '-', true));
 		}
 
-		public function generate($page = null){
+		public function generate(){
 			header('Content-Type: application/json');
 			echo $this->_Result;
 			exit;

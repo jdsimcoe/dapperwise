@@ -18,26 +18,7 @@
 	 * `TEMPLATE . /datasource.tpl`.
 	 */
 
-	Class DataSource {
-
-		/**
-		 * A constant that represents if this filter is an AND filter in which
-		 * an Entry must match all these filters. This filter is triggered when
-		 * the filter string contains a ` + `.
-		 *
-		 * @since Symphony 2.3.2
-		 * @var integer
-		 */
-		const FILTER_AND = 1;
-
-		/**
-		 * A constant that represents if this filter is an OR filter in which an
-		 * entry can match any or all of these filters
-		 *
-		 * @since Symphony 2.3.2
-		 * @var integer
-		 */
-		const FILTER_OR = 2;
+	Class DataSource{
 
 		/**
 		 * Holds all the environment variables which include parameters set by
@@ -85,8 +66,7 @@
 			// The old signature was array/array/boolean
 			// The new signature is array/boolean
 			$arguments = func_get_args();
-
-			if(count($arguments) == 3 && is_bool($arguments[1]) && is_bool($arguments[2])) {
+			if(is_bool($arguments[1]) && is_bool($arguments[2])) {
 				$env = $arguments[0];
 				$process_params = $arguments[1];
 			}
@@ -144,7 +124,7 @@
 		 *  Symphony 2.3.1, please use `execute()` instead.
 		 * @see execute()
 		 */
-		public function grab(array &$param_pool = null) {
+		public function grab(array &$param_pool=NULL) {
 			return $this->execute($param_pool);
 		}
 
@@ -159,7 +139,7 @@
 		 * @return XMLElement
 		 *  The XMLElement to add into the XML for a page.
 		 */
-		public function execute(array &$param_pool = null) {
+		public function execute(array &$param_pool=NULL) {
 			$result = new XMLElement($this->dsParamROOTELEMENT);
 
 			try{
@@ -190,11 +170,10 @@
 		 *
 		 * @param string $value
 		 *  The filter string for a field.
-		 * @return integer
-		 *  DataSource::FILTER_OR or DataSource::FILTER_AND
+		 * @return DS_FILTER_OR or DS_FILTER_AND
 		 */
 		public function __determineFilterType($value){
-			return preg_match('/\s+\+\s+/', $value) ? DataSource::FILTER_AND : DataSource::FILTER_OR;
+			return (strpos($value, '+') === false) ? DS_FILTER_OR : DS_FILTER_AND;
 		}
 
 		/**
@@ -235,20 +214,14 @@
 
 			if($env) $this->_env = $env;
 
-			if((isset($this->_env) && is_array($this->_env)) && isset($this->dsParamFILTERS) && is_array($this->dsParamFILTERS) && !empty($this->dsParamFILTERS)){
-
+			if((isset($this->_env) && is_array($this->_env)) && is_array($this->dsParamFILTERS) && !empty($this->dsParamFILTERS)){
 				foreach($this->dsParamFILTERS as $key => $value){
 					$value = stripslashes($value);
 					$new_value = $this->__processParametersInString($value, $this->_env);
 
-					// If a filter gets evaluated to nothing, eg. ` + ` or ``, then remove
-					// the filter. RE: #1759
-					if(strlen(trim($new_value)) == 0 || !preg_match('/\w+/', $new_value)) {
-						unset($this->dsParamFILTERS[$key]);
-					}
-					else {
-						$this->dsParamFILTERS[$key] = $new_value;
-					}
+					if(strlen(trim($new_value)) == 0) unset($this->dsParamFILTERS[$key]);
+					else $this->dsParamFILTERS[$key] = $new_value;
+
 				}
 			}
 
@@ -273,11 +246,12 @@
 				$this->dsParamINCLUDEDELEMENTS = null; // don't query any fields in this section
 			}
 
-			$this->_param_output_only = ((!isset($this->dsParamINCLUDEDELEMENTS) || !is_array($this->dsParamINCLUDEDELEMENTS) || empty($this->dsParamINCLUDEDELEMENTS)) && !isset($this->dsParamGROUP));
+			$this->_param_output_only = ((!is_array($this->dsParamINCLUDEDELEMENTS) || empty($this->dsParamINCLUDEDELEMENTS)) && !isset($this->dsParamGROUP));
 
-			if(isset($this->dsParamREDIRECTONEMPTY) && $this->dsParamREDIRECTONEMPTY == 'yes' && $this->_force_empty_result){
+			if($this->dsParamREDIRECTONEMPTY == 'yes' && $this->_force_empty_result){
 				throw new FrontendPageNotFoundException;
 			}
+
 		}
 
 		/**
@@ -436,9 +410,6 @@
 	/**
 	 * A constant that represents if this filter is an AND filter in which
 	 * an Entry must match all these filters
-	 *
-	 * @deprecated This constant has been deprecated and will be removed in
-	 *  Symphony 2.4. Use DataSource::FILTER_AND instead
 	 * @var integer
 	 */
 	define_safe('DS_FILTER_AND', 1);
@@ -446,9 +417,6 @@
 	/**
 	 * A constant that represents if this filter is an OR filter in which an
 	 * entry can match any or all of these filters
-	 *
-	 * @deprecated This constant has been deprecated and will be removed in
-	 *  Symphony 2.4. Use DataSource::FILTER_AND instead
 	 * @var integer
 	 */
 	define_safe('DS_FILTER_OR', 2);

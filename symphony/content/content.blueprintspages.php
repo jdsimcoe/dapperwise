@@ -202,41 +202,20 @@
 				))
 			);
 
-			/**
-			 * Allows an extension to modify the existing options for this page's
-			 * With Selected menu. If the `$options` parameter is an empty array,
-			 * the 'With Selected' menu will not be rendered.
-			 *
-			 * @delegate AddCustomActions
-			 * @since Symphony 2.3.2
-			 * @param string $context
-			 * '/blueprints/pages/'
-			 * @param array $options
-			 *  An array of arrays, where each child array represents an option
-			 *  in the With Selected menu. Options should follow the same format
-			 *  expected by `Widget::__SelectBuildOption`. Passed by reference.
-			 */
-			Symphony::ExtensionManager()->notifyMembers('AddCustomActions', '/blueprints/pages/', array(
-				'options' => &$options
-			));
-
-			if(!empty($options)) {
-				$tableActions->appendChild(Widget::Apply($options));
-				$this->Form->appendChild($tableActions);
-			}
+			$tableActions->appendChild(Widget::Apply($options));
+			$this->Form->appendChild($tableActions);
 		}
 
 		public function __viewTemplate() {
 			$this->setPageType('form');
-			$handle = isset($this->_context[1]) ? $this->_context[1] : null;
-			$this->Form->setAttribute('action', SYMPHONY_URL . '/blueprints/pages/template/' . $handle . '/');
+			$this->Form->setAttribute('action', SYMPHONY_URL . '/blueprints/pages/template/' . $this->_context[1] . '/');
 			$this->Form->setAttribute('class', 'columns');
 
-			$filename = $handle . '.xsl';
+			$filename = $this->_context[1] . '.xsl';
 			$file_abs = PAGES . '/' . $filename;
 
-			$is_child = strrpos($handle,'_');
-			$pagename = ($is_child != false ? substr($handle, $is_child + 1) : $handle);
+			$is_child = strrpos($this->_context[1],'_');
+			$pagename = ($is_child != false ? substr($this->_context[1], $is_child + 1) : $this->_context[1]);
 			$pagedata = PageManager::fetch(false, array('id'), array(
 				"p.handle = '{$pagename}'"
 			));
@@ -344,8 +323,7 @@
 
 		public function __viewEdit() {
 			$this->setPageType('form');
-			$fields = array("title"=>null, "handle"=>null, "parent"=>null, "params"=>null, "type"=>null, "data_sources"=>null);
-			$existing = $fields;
+			$fields = array();
 
 			$nesting = (Symphony::Configuration()->get('pages_table_nest_children', 'symphony') == 'yes');
 
@@ -437,9 +415,7 @@
 				)
 			));
 
-			$page_id = isset($page_id) ? $page_id : null;
-
-			if(!empty($title)) {
+			if($existing) {
 				$template_name = $fields['handle'];
 				$page_url = URL . '/' . PageManager::resolvePagePath($page_id) . '/';
 				if($existing['parent']){
@@ -453,14 +429,13 @@
 				));
 			}
 			else {
-				$this->appendSubheading(!empty($title) ? $title : __('Untitled'));
+				$this->appendSubheading(($title ? $title : __('Untitled')));
 			}
 
 			if(isset($page_id)) {
 				$this->insertBreadcrumbsUsingPageIdentifier($page_id, false);
 			}
 			else {
-				$_GET['parent'] = isset($_GET['parent']) ? $_GET['parent'] : null;
 				$this->insertBreadcrumbsUsingPageIdentifier((int)$_GET['parent'], true);
 			}
 
@@ -586,7 +561,7 @@
 			$options = array();
 
 			if(is_array($events) && !empty($events)) {
-				if(!isset($fields['events'])) $fields['events'] = array();
+				if(!is_array($fields['events'])) $fields['events'] = array();
 				foreach ($events as $name => $about) $options[] = array(
 					$name, in_array($name, $fields['events']), $about['name']
 				);
@@ -604,7 +579,7 @@
 			$options = array();
 
 			if(is_array($datasources) && !empty($datasources)) {
-				if(!isset($fields['data_sources'])) $fields['data_sources'] = array();
+				if(!is_array($fields['data_sources'])) $fields['data_sources'] = array();
 				foreach ($datasources as $name => $about) $options[] = array(
 					$name, in_array($name, $fields['data_sources']), $about['name']
 				);
@@ -662,23 +637,6 @@
 			$checked = (is_array($_POST['items'])) ? array_keys($_POST['items']) : null;
 
 			if(is_array($checked) && !empty($checked)) {
-				/**
-				 * Extensions can listen for any custom actions that were added
-				 * through `AddCustomPreferenceFieldsets` or `AddCustomActions`
-				 * delegates.
-				 *
-				 * @delegate CustomActions
-				 * @since Symphony 2.3.2
-				 * @param string $context
-				 *  '/blueprints/pages/'
-				 * @param array $checked
-				 *  An array of the selected rows. The value is usually the ID of the
-				 *  the associated object. 
-				 */
-				Symphony::ExtensionManager()->notifyMembers('CustomActions', '/blueprints/pages/', array(
-					'checked' => $checked
-				));
-
 				switch ($_POST['with-selected']) {
 					case 'delete':
 						$this->__actionDelete($checked, SYMPHONY_URL . '/blueprints/pages/');
