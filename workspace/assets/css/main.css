@@ -3260,7 +3260,7 @@ img.feature {
 }
 .horizon.address {
   background: #404040;
-  color: #555555;
+  color: #808080;
   height: auto;
   padding: 4em 2em;
   text-align: center;
@@ -3318,18 +3318,18 @@ img.feature {
 }
 .horizon.address .btn-large {
   background: transparent;
-  border: 3px solid #333333;
+  border: 3px solid #262626;
   -webkit-box-shadow: none;
   box-shadow: none;
-  color: #333333;
+  color: #262626;
   padding: 15px 30px;
   margin-top: 20px;
 }
 .horizon.address .btn-large:hover {
-  border-color: #0d0d0d;
+  border-color: #000000;
   -webkit-box-shadow: none;
   box-shadow: none;
-  color: #0d0d0d;
+  color: #000000;
 }
 .horizon.address hr {
   border-color: #333333;
