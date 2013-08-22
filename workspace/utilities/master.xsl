@@ -57,9 +57,15 @@
     <meta name="description" content="Hand-crafted artisan coffee roasting in the outskirts of Portland, Oregon" />
     <meta name="keywords" content="Coffee, Coffee Roasting, Portland Coffee Roasting" />
     <meta name="author" content="Dapper &#38; Wise Roasters and Insomnia Coffee Co." />
-    <meta name="responsimage" data-server="{$root}/image/2/width/height/anchor/0/uploads/images/filename" data-static="{$workspace}/img/spacer.gif" data-loading="{$workspace}/img/loading.gif" />
+    <meta name="responsimage" data-server="{$root}/image/2/width/height/anchor/0/uploads/images/filename" data-static="{$workspace}/assets/img/spacer.gif" data-loading="{$workspace}/assets/img/loading.gif" />
 
     <link href="{$workspace}/assets/css/main.css" rel="stylesheet" />
+    <xsl:comment>
+      <![CDATA[[if IE 7]>
+        <link rel="stylesheet" href="/workspace/assets/css/icons-ie7.css" />
+      <![endif]]]>
+    </xsl:comment>
+
     <link href="{$workspace}/assets/img/favicon.ico" rel="shortcut icon" type="image/x-icon" />
     <link rel="apple-touch-icon-precomposed" href="{$workspace}/assets/img/apple-touch-icon-precomposed.png" />
 
@@ -88,11 +94,33 @@
       <xsl:apply-templates />
     </div>
 
+    <div class="horizon address">
+      <div class="container">
+        <div class="col-lg-6">
+          <h4>Our Location</h4>
+          <address>
+            2384 NW Amberbrook Drive<br/>
+            Beaverton, OR 97006<br />
+            <abbr title="Phone">P:</abbr> (503) 716-0839
+          </address>
+        </div>
+        <hr class="visible-sm"/>
+        <div class="col-lg-6">
+          <h4>Contact Us</h4>
+          <p>
+            <a href="mailto:dapperandwise@gmail.com?Subject=Dapper &amp; Wise Inquiry" target="_blank" class="btn btn-large">
+            Send an Email
+          </a>
+          </p>
+        </div>
+      </div>
+    </div>
+
     <footer class="footer">
 
       <div class="container">
         <div class="row">
-          <i class="icon-stache icon-medium"></i>
+          <i class="icon-specs icon-medium"></i>
           <p>Lovingly designed, crafted, roasted, and brewed by <a href="{root}" target="_blank">Dapper &#38; Wise Roasters</a>, <a href="http://insomniacoffee.co">Insomnia Coffee Co.</a> and <a href="http://simko.io" target="_blank">Simko.io</a>.</p>
         </div>
         <div class="row">

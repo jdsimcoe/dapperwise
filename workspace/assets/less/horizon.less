@@ -15,11 +15,17 @@
   h5,
   h6 {
     .allcaps();
-    .center();
     font-family: @fonts-sans;
     font-weight: bold;
     letter-spacing: 2px;
     margin: 15px 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    .center();
   }
 
   .lead {
@@ -31,9 +37,19 @@
     width: 75%;
   }
 
-  p {
+  p,
+  address {
     font-family: @fonts-serif;
     line-height: 1.8;
     margin: 15px 0;
+  }
+
+  .link {
+    padding-bottom: 3px;
+
+    &:hover {
+      text-decoration: none;
+      border-bottom: 2px solid fadeout(@brand-primary, 90%);
+    }
   }
 }
