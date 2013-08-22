@@ -4,6 +4,15 @@
   height: @height;
   padding: 4em 2em;
 
+  @media (max-width: @screen-medium) {
+    padding: 1em 2em;
+
+    p,
+    address {
+      font-size: 0.9em;
+    }
+  }
+
   .icon-medium {
     color: darken(@color-background, 10%);
   }

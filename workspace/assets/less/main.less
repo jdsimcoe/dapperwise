@@ -9,6 +9,7 @@
 // -------------------------------------------------
 
 @font-size-base: 18px;
+@screen-tablet: 991px;
 
 // Custom Variables
 // -------------------------------------------------
@@ -97,6 +98,21 @@
 
   }
 
+  .navbar-toggle {
+    border: 2px solid transparent;
+    margin: 25px 15px 10px 10px;
+    padding: 0;
+    .transition(background 300ms ease-in-out);
+
+    &:hover {
+      background: none;
+
+      .icon-bar {
+        background-color: lighten(@color-black, 50%);
+      }
+    }
+  }
+
 }
 
 .navbar-brand {
@@ -104,12 +120,20 @@
   height: 50px;
   position: relative;
   top: -30px;
+
+  @media (max-width: @screen-medium) {
+    top: -35px;
+  }
 }
 
 img {
 
   &.feature {
     margin-top: 118px;
+
+    @media (max-width: @screen-medium) {
+      margin-top: 109px;
+    }
   }
 
 }

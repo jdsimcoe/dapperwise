@@ -34,7 +34,7 @@
           <li>
             <a href="#craft">
               <small>&#8470; 3</small>
-              The Craft
+              Our Craft
             </a>
           </li>
           <li>
