@@ -6,7 +6,7 @@
 
 <xsl:template match="data">
 
-  <img src="/workspace/img/spacer.gif" alt="Our roasterie" class="img-responsive feature" width="100%" data-responsimage="dw-website-roaster.jpg" data-responsimage-anchor="8" />
+  <img src="{$root}/image/2/1800/600/5/0/uploads/images/dw-website-roaster.jpg" class="feature" alt="Our roasterie" width="100%" />
 
   <div id="about" class="horizon about">
     <div class="container">
@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  <img src="/workspace/img/spacer.gif" alt="Some handsomely roasted beans" class="img-responsive" width="100%" data-responsimage="dw-website-beans.jpg" />
+  <img src="{$root}/image/2/1800/600/5/0/uploads/images/dw-website-beans.jpg" alt="Some handsomely roasted beans" width="100%" />
 
   <div id="coffee" class="horizon coffee">
     <div class="container">
@@ -32,7 +32,7 @@
     </div>
   </div>
 
-  <img src="/workspace/img/spacer.gif" alt="A sublime Chemex brew" class="img-responsive" width="100%" data-responsimage="dw-website-chemex.jpg" />
+  <img src="{$root}/image/2/1800/600/5/0/uploads/images/dw-website-chemex.jpg" alt="A sublime Chemex brew" width="100%" />
 
   <div id="craft" class="horizon craft">
     <div class="container">
@@ -46,7 +46,7 @@
     </div>
   </div>
 
-  <img src="/workspace/img/spacer.gif" alt="A cupping in Beaverton" class="img-responsive" width="100%" data-responsimage="dw-website-cupping.jpg" />
+  <img src="{$root}/image/2/1800/600/5/0/uploads/images/dw-website-cupping.jpg" alt="A cupping in Beaverton" width="100%" />
 
   <div id="location" class="horizon location">
     <div class="container">
@@ -59,7 +59,7 @@
     </div>
   </div>
 
-  <img src="/workspace/img/spacer.gif" alt="Come and shop our store" class="img-responsive" width="100%" data-responsimage="dw-website-store.jpg" />
+  <img src="{$root}/image/2/1800/600/5/0/uploads/images/dw-website-store.jpg" alt="Come and shop our store" width="100%" />
 
   <div id="store" class="horizon store">
     <div class="container">

@@ -57,7 +57,7 @@
     <meta name="description" content="Hand-crafted artisan coffee roasting in the outskirts of Portland, Oregon" />
     <meta name="keywords" content="Coffee, Coffee Roasting, Portland Coffee Roasting" />
     <meta name="author" content="Dapper &#38; Wise Roasters and Insomnia Coffee Co." />
-    <meta name="responsimage" data-server="{$root}/image/2/width/height/anchor/0/uploads/images/filename" data-static="{$workspace}/assets/img/spacer.gif" data-loading="{$workspace}/assets/img/loading.gif" />
+<!--     <meta name="responsimage" data-server="{$root}/image/2/width/height/anchor/0/uploads/images/filename" data-static="{$workspace}/assets/img/spacer.gif" data-loading="{$workspace}/assets/img/loading.gif" /> -->
 
     <link href="{$workspace}/assets/css/main.css" rel="stylesheet" />
     <xsl:comment>
