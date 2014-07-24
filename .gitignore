@@ -8,6 +8,8 @@
 *.sublime-project
 *.sublime-workspace
 install-log.txt
-manifest/*
-sql/*
+manifest/cache/*
+manifest/logs/*
+manifest/tmp/*
+manifest/subsectionmanager-storage
 workspace/uploads
