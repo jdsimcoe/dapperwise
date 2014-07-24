@@ -1,15 +1,7 @@
-.htaccess
-._*
-.Apple*
 .DS_Store
-*.esproj
-*~
-*.geany
-*.sublime-project
-*.sublime-workspace
-install-log.txt
+*.sublime-*
 manifest/cache/*
 manifest/logs/*
 manifest/tmp/*
 manifest/subsectionmanager-storage
-workspace/uploads
+workspace/uploads/
