@@ -1,5 +1,6 @@
 .DS_Store
 *.sublime-*
+manifest/config.php
 manifest/cache/*
 manifest/logs/*
 manifest/tmp/*
