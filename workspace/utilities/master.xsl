@@ -113,14 +113,12 @@
           <h4>SE Portland Location</h4>
           <address>
             3158 SE Division Street<br/>
-            Portland, OR 97202<br />
-            <abbr title="Phone">P:</abbr> (503) 716-0839
+            Portland, OR 97202<br/>
           </address>
         </div>
       </div>
       <div class="container">
-        <div class="col-lg-6 col-lg-offset-3">
-          <h4>Contact Us</h4>
+        <div class="col-lg-6 col-offset-3">
           <p>
             <a href="mailto:dapperandwise@gmail.com?Subject=Dapper &amp; Wise Inquiry" target="_blank" class="btn btn-large">
             Send an Email</a>
