@@ -101,7 +101,7 @@
     <div class="horizon address">
       <div class="container">
         <div class="col-lg-6">
-          <h4>Our Location</h4>
+          <h4>Beaverton Location</h4>
           <address>
             2384 NW Amberbrook Drive<br/>
             Beaverton, OR 97006<br />
@@ -110,11 +110,20 @@
         </div>
         <hr class="visible-sm"/>
         <div class="col-lg-6">
+          <h4>SE Portland Location</h4>
+          <address>
+            3158 SE Division Street<br/>
+            Portland, OR 97202<br />
+            <abbr title="Phone">P:</abbr> (503) 716-0839
+          </address>
+        </div>
+      </div>
+      <div class="container">
+        <div class="col-lg-6 col-lg-offset-3">
           <h4>Contact Us</h4>
           <p>
             <a href="mailto:dapperandwise@gmail.com?Subject=Dapper &amp; Wise Inquiry" target="_blank" class="btn btn-large">
-            Send an Email
-          </a>
+            Send an Email</a>
           </p>
         </div>
       </div>
