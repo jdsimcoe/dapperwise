@@ -122,7 +122,7 @@
             <a href="mailto:dapperandwise@gmail.com?Subject=Dapper &amp; Wise Inquiry" target="_blank" class="btn btn-large">
             Send an Email</a>
             <xsl:text>&#160;&#160;</xsl:text>
-            <a href="javascript:void()" class="btn btn-large">
+            <a href="javascript:void(0)" class="btn btn-large">
             (503) 716-0839</a>
           </p>
         </div>
